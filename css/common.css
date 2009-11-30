@@ -1,0 +1,46 @@
+body { 
+  font-family: Verdana,Arial,sans-serif ;
+  font-size: 12px;
+  padding: 0px;
+  margin: 0px;
+}
+
+li {
+  margin: 0px;
+  padding: 0px;
+}
+
+ul {
+  margin: 0px;
+  padding: 0px 0px 0px 10px;
+}
+
+.overlay-menu-item {
+  display: block;
+  margin: 0px 0px 0px 0px;
+  padding: 3px 0px 3px 0px;
+  text-decoration: none;
+}
+
+#map_canvas {
+}
+
+.form-narrow {
+}
+
+.form-narrow .form-row {
+  clear: both;
+  position: relative;
+}
+
+.form-narrow .form-row label {
+  position: absolute;
+  font-weight: bold;
+  float: left;
+}
+
+.form-narrow .form-row input,
+.form-narrow .form-row select 
+ {
+  margin: 0px 0px 0px 40px;
+}
