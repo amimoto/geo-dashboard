@@ -108,6 +108,12 @@ function overlay_toggle ( overlay_name ) {
     else if ( overlay_name == "wikipedia" ) {
         overlay = new GLayer("org.wikipedia.en");
     }
+    else if ( overlay_name == "panoramio" ) {
+        overlay = new GLayer("com.panoramio.all");
+    }
+    else if ( overlay_name == "webcams" ) {
+        overlay = new GLayer("com.google.webcams");
+    }
     if ( overlay ) {
       overlays_toggled[overlay_name] = overlay;
       map.addOverlay(overlay);

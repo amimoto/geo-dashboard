@@ -5,7 +5,7 @@
     <title>Route Planner</title>
 		<link type="text/css" href="css/start/jquery-ui-1.7.2.custom.css" rel="stylesheet" />	
 		<link type="text/css" href="css/common.css" rel="stylesheet" />	
-    <script src="http://maps.google.com/maps?file=api&amp;v=2.x" type="text/javascript"></script>
+        <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=false&amp;key=ABQIAAAAmnNRehdf5kcJXviaLa5ySRSWwTRAcohuo77m-0RPbZZwmX__WhQNbF4oZKSVR86J5_fjFcO8A1-XUA" type="text/javascript"></script>
 		<script type="text/javascript" src="js/jquery-1.3.2.min.js"></script>
 		<script type="text/javascript" src="js/jquery-ui-1.7.2.custom.min.js"></script>
 		<script type="text/javascript" src="js/jquery.tempest-0.2.min.js"></script>
@@ -119,6 +119,19 @@
             <span class="ui-icon ui-icon-radio-on" 
                   style="float: left; margin-right: .3em;"></span> 
             Wikipedia
+          </a>
+
+
+          <a href="#" id="overlay-panoramio" class="overlay-menu-item" onclick="overlay_toggle('panoramio')">
+            <span class="ui-icon ui-icon-radio-on" 
+                  style="float: left; margin-right: .3em;"></span>
+            Photos
+          </a>
+
+          <a href="#" id="overlay-webcams" class="overlay-menu-item" onclick="overlay_toggle('webcams')">
+            <span class="ui-icon ui-icon-radio-on" 
+                  style="float: left; margin-right: .3em;"></span>
+            Webcams
           </a>
 
           <br />
