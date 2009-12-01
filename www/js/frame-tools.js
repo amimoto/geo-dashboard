@@ -150,9 +150,6 @@ function account_login ( user, pass ) {
 // --------------------------------------------------
 // Attempt to login to the remote server
 //
-
-  alert(user+","+pass);
-  return false;
 }
 
 function account_logout () {

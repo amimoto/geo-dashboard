@@ -15,6 +15,11 @@ var menu1 = [
     { 'Place Waypoint':       menuaction_place_waypoint  } 
   ]; 
 
+
+/*
+ * Page initialization
+ */
+
 $(function() {
   window_event_resize();
   window.onresize = window_event_resize;
@@ -37,7 +42,8 @@ $(function() {
   if (GBrowserIsCompatible()) {
     map        = new GMap2(document.getElementById("map_canvas"));
     geocoder   = new GClientGeocoder();
-    directions = new GDirections( map );
+    directions = new GDirections();
+    GEvent.addListener(directions, "load", directions_onload)
     map.setCenter(new GLatLng(CFG["defaults"]["map_center"][0],CFG["defaults"]["map_center"][1]),CFG["defaults"]["map_zoom"]);
     map.setUIToDefault();
   };
@@ -54,7 +60,14 @@ function direction_search ( dir_a, dir_b, dir_type ) {
 // type fields
 //
     var map = top.display.map;
-    directions.load("from: " + dir_a + " to: " + dir_b );
+    directions.load(
+        "from: " + dir_a + " to: " + dir_b,
+        {
+            travelMode: G_TRAVEL_MODE_DRIVING,
+            getPolyline: true,
+            getSteps: true
+        }
+    );
 }
 
 
@@ -66,6 +79,14 @@ function window_event_resize () {
 // --------------------------------------------------
   $('.fill_page').css("width",window.innerWidth)
                  .css("height",window.innerHeight);
+}
+
+function directions_onload () {
+// --------------------------------------------------
+// When direcitons have loaded into the "directions"
+// object, this function will be invoked
+//
+    alert("here!");
 }
 
 /*
