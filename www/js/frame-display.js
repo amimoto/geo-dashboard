@@ -6,9 +6,12 @@ var map;
 var geocoder;
 var directions;
 
+var directions_query  = '';
+
 var route_count       = 0;
 var route_list        = [];
 var route_menu_lookup = {};
+var route_menu_list   = [];
 
 var overlays_toggled = {};
 var menu_proto = [ 
@@ -39,9 +42,11 @@ $(function() {
     map        = new GMap2(document.getElementById("map_canvas"));
     geocoder   = new GClientGeocoder();
     directions = new GDirections();
-    GEvent.addListener( directions, "load", directions_event_load );
+
     map.setCenter(new GLatLng(CFG["defaults"]["map_center"][0],CFG["defaults"]["map_center"][1]),CFG["defaults"]["map_zoom"]);
     map.setUIToDefault();
+
+    GEvent.addListener( directions, "load", directions_event_load );
   };
 
 });
@@ -56,8 +61,9 @@ function direction_search ( dir_a, dir_b, dir_type ) {
 // type fields
 //
     var map = top.display.map;
+    directions_query = "from: " + dir_a + " to: " + dir_b,
     directions.load(
-        "from: " + dir_a + " to: " + dir_b,
+        directions_query,
         {
             travelMode: G_TRAVEL_MODE_DRIVING,
             getPolyline: true,
@@ -65,7 +71,6 @@ function direction_search ( dir_a, dir_b, dir_type ) {
         }
     );
 }
-
 
 /*
  * Event Handling
@@ -80,17 +85,29 @@ function contextmenu_event_show (cmenu,t,e) {
 
 // Add the base options in
   option_first[latlon_str] = function(menuItem,menu) {  
-    window.prompt("Location Coordinates (longitude,latitude)",latlon.lng()+","+latlon.lat())
+    window.prompt(
+        "Location Coordinates (longitude,latitude)",
+        latlon.lng()+","+latlon.lat()
+    )
   };
   menu_proto[0] = option_first;
   var menu_full = menu_proto.slice();
 
 // If the user has right clicked while on a route, let's add that in too
-  if ( route_menu_lookup[0]) {
-    menu_full.push($.contextMenu.separator);
-    menu_full.push({
-      'Route':function(){}
-    });
+  var routes_hovered = 0;
+  for (i in route_menu_lookup ) {
+
+// Add a separator if it's the first entry
+    if ( routes_hovered == 0 )
+      menu_full.push($.contextMenu.separator);
+
+// Add a menu item
+    var route_info = route_menu_lookup[i];
+    var menu_new = {};
+    menu_new[route_info.query] = function(){};
+    menu_full.push(menu_new);
+
+    routes_hovered++;
   }
 
   return menu_full;
@@ -118,26 +135,48 @@ function directions_event_load () {
     route_info: route_info,
     route_trace: route_trace,
     route_copyright: directions.getCopyrightsHtml(),
-    summary: summary
+    summary: summary,
+    query: directions_query
   };
   route_list.push(route_lookup_rec);
-  GEvent.addListener( 
+
+// We want to know when the mouse enters, or leaves a route
+// so that we can add the route information to the context menu
+// should the user right click
+  route_lookup_rec["listen_mouseover"] = GEvent.addListener( 
     route_trace, 
     'mouseover', 
     function() {
       document.body.style.cursor = 'hand';
       route_menu_lookup[route_id] = route_lookup_rec;
+      route_menu_list++;
     } 
   );
-  GEvent.addListener( 
+  route_lookup_rec["listen_mouseout"] = GEvent.addListener( 
     route_trace, 
     'mouseout',  
     function() {
       document.body.style.cursor = 'default';
       delete route_menu_lookup[route_id];
+      route_menu_list
     } 
   );
-  GEvent.addListener( 
+
+// While the mouse is overtop of this item, we want to 
+// position a node dot to show that we can move things 
+// around
+  route_lookup_rec["listen_mousemove"] = GEvent.addListener(
+    map,
+    'mousemove',
+    function(latlon) {
+        $('#debug').val(latlon);
+        return;
+    }
+  );
+
+// We capture the click event for... um... not sure. We'll need
+// to support drag instead!
+  route_lookup_rec["listen_click"] = GEvent.addListener( 
     route_trace, 
     'click',     
     function(latlon) {} 
@@ -146,7 +185,7 @@ function directions_event_load () {
 
 // Send the route to the route store for our use
 
-//  route_trace.enableEditing();
+  route_trace.enableEditing();
 
 // kind of like line drawing
 //  route_trace.enableDrawing();
@@ -201,6 +240,12 @@ function overlay_toggle ( overlay_name ) {
     }
     else if ( overlay_name == "webcams" ) {
         overlay = new GLayer("com.google.webcams");
+    }
+    else if ( overlay_name == "traffic" ) {
+        overlay = new GTrafficOverlay({incidents: true});
+    }
+    else if ( overlay_name == "videos" ) {
+        overlay = new GLayer("com.youtube.all");
     }
     if ( overlay ) {
       overlays_toggled[overlay_name] = overlay;

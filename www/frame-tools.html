@@ -39,21 +39,21 @@
         </div>
       </div>
 
-  <!-- NAVIGATION -->
+  <!-- DIRECTIONS -->
       <div>
-        <h3><a href="#">Navigation</a></h3>
+        <h3><a href="#">Directions</a></h3>
         <div>
 
           <form action="#" onsubmit="return direction_search(this['dir_from'].value,this['dir_to'].value,$(this['dir_type']).val())" name="direction-search" class="form-narrow">
 
             <div class="form-row">
               <label>A</label>
-              <input type="text" name="dir_from" id="dir_from" />
+              <input type="text" name="dir_from" id="dir_from" value="west vancouver" />
             </div>
 
             <div class="form-row">
               <label>B</label>
-              <input type="text" name="dir_to" id="dir_to" />
+              <input type="text" name="dir_to" id="dir_to" value="vancouver" />
             </div>
 
             <div class="form-row">
@@ -81,6 +81,13 @@
   <!-- TRACKS -->
       <div>
         <h3><a href="#">Tracks</a></h3>
+        <div>
+        </div>
+      </div>
+
+  <!-- WAYPOINTS -->
+      <div>
+        <h3><a href="#">Waypoints</a></h3>
         <div>
         </div>
       </div>
@@ -130,6 +137,20 @@
                   style="float: left; margin-right: .3em;"></span>
             Webcams
           </a>
+
+          <a href="#" id="overlay-traffic" class="overlay-menu-item" onclick="overlay_toggle('traffic')">
+            <span class="ui-icon ui-icon-radio-on" 
+                  style="float: left; margin-right: .3em;"></span>
+            Traffic
+          </a>
+
+
+          <a href="#" id="overlay-youtube" class="overlay-menu-item" onclick="overlay_toggle('youtube')">
+            <span class="ui-icon ui-icon-radio-on" 
+                  style="float: left; margin-right: .3em;"></span>
+            Videos
+          </a>
+
 
           <br />
 
