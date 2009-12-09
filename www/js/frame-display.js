@@ -398,8 +398,20 @@ function route_locate_edge ( map, route_data, latlon ) {
         var point_median = edge_click_within( point_prev, point_cur, point, 10 );
         if (point_median) {
             var latlng_median = map.fromContainerPixelToLatLng(point_median);
-            marker = new GMarker( latlng_median );
-            map.addOverlay(marker);
+            var gicon = new GIcon({
+                image: "css/images/route-control-point.png",
+                iconSize: new GSize(10,10),
+                iconAnchor: new GPoint(5,5)
+            });
+            marker = new GMarker( 
+                            latlng_median, 
+                            {
+                                icon:gicon,
+                                draggable: true
+                            } 
+                        );
+            var overlay = map.addOverlay(marker);
+
             return 1;
         }
         point_prev = point_cur;
