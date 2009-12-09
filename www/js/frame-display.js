@@ -385,12 +385,21 @@ function route_locate_edge ( map, route_data, latlon ) {
     var route_trace_vertices = route_trace.getVertexCount();
     var point                = map.fromLatLngToContainerPixel(latlon);
 
+    if ( marker ) {
+        map.removeOverlay(marker);
+        marker = null;
+    }
+
 //$('#debug').val( "" + (temp++) + "\n" );
     var point_prev           = map.fromLatLngToContainerPixel(route_trace.getVertex(0));
     var route_trace_vertices = route_trace.getVertexCount();
     for ( var i=1; i < route_trace_vertices; i++ ) {
         var point_cur = map.fromLatLngToContainerPixel(route_trace.getVertex(i));
-        if (edge_click_within( point_prev, point_cur, point, 10 )) {
+        var point_median = edge_click_within( point_prev, point_cur, point, 10 );
+        if (point_median) {
+            var latlng_median = map.fromContainerPixelToLatLng(point_median);
+            marker = new GMarker( latlng_median );
+            map.addOverlay(marker);
             return 1;
         }
         point_prev = point_cur;
@@ -677,29 +686,52 @@ function edge_click_within ( start_pt, end_pt, click_pt, r ) {
         if ( click_y < (click_x-end_pt.x)/slope_v+end_pt.y )     return;
     }
 
-// If we got here, we have managed to find a route trace
-// that is actually worth something. Let's build a poly line that
-// will surround it
-    var lines = [
-        [ 
-            start_pt.x, start_pt.y+B,
-            end_pt.x, ((end_pt.x-start_pt.x)*slope+start_pt.y+B)
-        ],
-        [ 
-            start_pt.x, start_pt.y-B,
-            end_pt.x, ((end_pt.x-start_pt.x)*slope+start_pt.y-B)
-        ],
+/*
+ * Lets reply back with an X,Y point that relates to where
+ * on the line segment the user is closest to (on a perpendicular
+ * basis)
+ *            end
+ *           /|
+ *          / | B
+ *      A  /  |
+ *        /  _clickpt
+ *       / _/
+ *  start/   C
+ *
+ *   A: length of edge
+ *   B: distance between end point and click point
+ *   C: distance between start point and click point
+ *   H: (not marked) distance of click point from edge
+ *
+ *   Formulas from:
+ *    http://softsurfer.com/Archive/algorithm_0101/algorithm_0101.htm
+ *    area = .25 * sqrt( 4*a^2*b^2 - (a^2+b^2-c^2)^2 )
+ *    H    = area * 2 / A
+ *
+ *   So:
+ *    H    = .5 * sqrt( 4*a^2*b^2 - (a^2+b^2-c^2)^2 ) / A
+ */
+    var a = Math.sqrt(rise*rise+run*run);
+    var vx = click_x - end_pt.x;
+    var vy = click_y - end_pt.y;
+    var b = Math.sqrt(vx*vx+vy*vy);
+        vx = click_x - start_pt.x;
+        vy = click_y - start_pt.y;
+    var c = Math.sqrt(vx*vx+vy*vy);
 
-    ];
-    for ( var i=0; i<lines.length; i++ ) {
-        var seg = lines[i];
-        var s   = map.fromContainerPixelToLatLng(new GPoint(seg[0],seg[1]));
-        var e   = map.fromContainerPixelToLatLng(new GPoint(seg[2],seg[3]));
-        var polyline = new GPolyline([s,e],"#ff0000",2);
-        var ovl = map.addOverlay(polyline);
-        temp_overlays.push(polyline);
-    }
+    var h = .5 * Math.sqrt(
+                4 * a*a*b*b
+                - Math.pow( a*a + b*b - c*c, 2 )
+            ) / a;
 
-    return 1;
+// At this point, it's possible to calculate the distance 
+// from start that the perpendicular intercept from the clickpt
+// will cross
+    var ai = c * Math.sin(Math.acos(h/c));
+    var p  = ai / a;
+    var nx = start_pt.x + run * p;
+    var ny = start_pt.y + rise * p;
+    var np = new GPoint( nx, ny );
+    return np;
 }
 
