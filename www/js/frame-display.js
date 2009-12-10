@@ -6,7 +6,8 @@ var map;
 var geocoder;
 var directions;
 
-var marker            = null;
+var state_dragging    = null;
+var marker_dragging   = null;
 var directions_query  = '';
 
 var route_count       = 0;
@@ -50,6 +51,8 @@ $(function() {
     map.setUIToDefault();
 
     GEvent.addListener( directions, "load", directions_event_load );
+
+    map.getDragObject().setDraggingCursor("crosshair");
   };
 
 });
@@ -148,6 +151,8 @@ function directions_event_load () {
 // We want to know when the mouse enters, or leaves a route
 // so that we can add the route information to the context menu
 // should the user right click
+
+/* Temporarily removed
   route_lookup_rec["listen_mouseover"] = GEvent.addListener( 
     route_trace, 
     'mouseover', 
@@ -166,6 +171,7 @@ function directions_event_load () {
       route_menu_list
     } 
   );
+*/
 
 // While the mouse is overtop of this item, we want to 
 // position a node dot to show that we can move things 
@@ -175,32 +181,69 @@ function directions_event_load () {
     'mousemove',
     function(latlon) {
 
-//        $('#debug').val(temp++);
-//        var routes_hovered = 0;
-//        return;
-
-// Remove previously laid overlays
-        debug_log("");
-        for (; temp_overlays.length;) {
-            debug_log("removed overlay");
-            map.removeOverlay(temp_overlays.shift());
-        }
+// Ignore if we're dragging
+        if ( state_dragging ) return;
 
 // If we're hovering over a route, let's find the point that's
 // closest to an edge and mark it with a vertex manipulator
-        var route_matches = 0;
         for (var i=0; i<route_list.length;i++) {
           var route_data = route_list[i];
-          var edge_best  = route_locate_edge( map, route_data, latlon );
-          if ( edge_best ) {
-            route_matches++;
-          }
-         }
-         debug_log((temp++)+":"+(route_matches?"yes":"no"));
-         debug_log("Matches:"+route_matches);
+          var point_median  = route_locate_edge( map, route_data, latlon );
 
+// If the point_median is set, this means that there's an edge that's close
+// and we now have a starting coordinate for this point
+          if ( point_median ) {
+            var latlng_median = map.fromContainerPixelToLatLng(point_median["point"]);
+
+// Only create the marker if we need to
+            if ( marker_dragging ) {
+              marker_dragging["marker"].setLatLng(latlng_median);
+              marker_dragging["i"] = point_median["i"];
+            }
+// Marker doesn't exist. Let's initialize it
+            else {
+
+              var gicon = new GIcon({
+                image:      "css/images/route-control-point.png",
+                iconSize:   new GSize(16,16),
+                iconAnchor: new GPoint(8,8)
+              });
+              var marker = new GMarker( 
+                latlng_median, 
+                { icon: gicon, draggable: true } 
+              );
+
+// Add the tie point to the route
+              map.addOverlay(marker);
+              marker_dragging = {
+                marker: marker,
+                i: point_median["i"]
+              };
+
+// Setup the events that will allow us to drag the new node point
+// from one place to another. How exciting! :)
+              GEvent.addListener(marker, "dragstart", function() {
+                state_dragging = 1;
+              });
+              GEvent.addListener(marker, "dragend", function() {
+                state_dragging = null;
+              });
+            }
+
+            return 1;
+          }
+        }
+
+// Remove previously laid marker if we don't have any edges
+// that are near the location
+        if ( marker_dragging ) {
+            map.removeOverlay(marker_dragging["marker"]);
+            marker_dragging = null;
+        }
+
+// Okay, no matches or anything. We'll return out
         return;
-    }
+      }
   );
 
 // We capture the click event for... um... not sure. We'll need
@@ -216,7 +259,6 @@ function directions_event_load () {
   route_count++;
 
 // Send the route to the route store for our use
-
 //  route_trace.enableEditing();
 
 // kind of like line drawing
@@ -227,7 +269,7 @@ function directions_event_load () {
   return;
 }
 
-function route_locate_edge ( map, route_data, latlon ) {
+function route_locate_edge ( map, route_data, click_loc ) {
 // --------------------------------------------------
 // Given a route and X, Y coordinates, this
 // function will attempt to place the X,Y coordinates
@@ -236,37 +278,18 @@ function route_locate_edge ( map, route_data, latlon ) {
 //
 
     var route_trace          = route_data["route_trace"];
-    var edge_boundaries      = route_lookup_rec["edge_boundaries"];
     var route_trace_vertices = route_trace.getVertexCount();
-    var point                = map.fromLatLngToContainerPixel(latlon);
-
-    if ( marker ) {
-        map.removeOverlay(marker);
-        marker = null;
-    }
+    var point                = map.fromLatLngToContainerPixel(click_loc);
 
     var point_prev           = map.fromLatLngToContainerPixel(route_trace.getVertex(0));
-    var route_trace_vertices = route_trace.getVertexCount();
     for ( var i=1; i < route_trace_vertices; i++ ) {
         var point_cur = map.fromLatLngToContainerPixel(route_trace.getVertex(i));
         var point_median = edge_click_within( point_prev, point_cur, point, 10 );
-        if (point_median) {
-            var latlng_median = map.fromContainerPixelToLatLng(point_median);
-            var gicon = new GIcon({
-                image: "css/images/route-control-point.png",
-                iconSize: new GSize(16,16),
-                iconAnchor: new GPoint(8,8)
-            });
-            marker = new GMarker( 
-                            latlng_median, 
-                            {
-                                icon:gicon,
-                                draggable: true
-                            } 
-                        );
-            var overlay = map.addOverlay(marker);
-
-            return 1;
+        if ( point_median ) {
+            return {
+              "point": point_median,
+              "i": i
+            };
         }
         point_prev = point_cur;
     }
@@ -433,6 +456,12 @@ function debug_log ( msg ) {
     else {
         $('#debug').val( $('#debug').val() + msg + "\n" );
     }
+}
+
+
+function debug_logcl ( msg ) {
+// --------------------------------------------------
+      $('#debug').val( msg + "\n" );
 }
 
 
