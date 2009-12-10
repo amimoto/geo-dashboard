@@ -145,10 +145,6 @@ function directions_event_load () {
   };
   route_list.push(route_lookup_rec);
 
-// We can now calculate the boundaries for each edge in this route.
-//  var edge_boundaries = route_boundary_define( map, route_lookup_rec, 10 );
-//  route_lookup_rec["edge_boundaries"] = edge_boundaries;
-
 // We want to know when the mouse enters, or leaves a route
 // so that we can add the route information to the context menu
 // should the user right click
@@ -231,147 +227,6 @@ function directions_event_load () {
   return;
 }
 
-function route_boundary_define ( map, route_data, leeway ) {
-// --------------------------------------------------
-// Creates the boundary test values for the route
-// provided
-//
-    var route_trace = route_data["route_trace"];
-    var route_boundaries = [];
-
-// At this point, we can start hunting for edges that
-// may be close to the x,y coordinate we seek
-    var edge_boundaries      = [];
-    var point_prev           = route_trace.getVertex(0);
-    var route_trace_vertices = route_trace.getVertexCount();
-//$('#debug').val("");
-    for ( var i = 1; i < route_trace_vertices; i++ ) {
-
-// Create a bounding box
-// We actually don't know which point is higher/lower or
-// left/right. 
-        var point_cur = route_trace.getVertex(i);
-
-// Find out the slope
-        var start_pt  = map.fromLatLngToContainerPixel(point_prev);
-        var end_pt    = map.fromLatLngToContainerPixel(point_cur);
-        var rise      = end_pt.y - start_pt.y;
-        var run       = end_pt.x - start_pt.x;
-        var r         = leeway; // number of pixels of leeway for snapping
-
-// We will account for cases where the points are straight
-// sideways or straight left or right
-        var boundary_data = null;
-        if ( rise == 0 && run == 0 ) {
-        }
-
-// If the edge is flat
-        else if ( rise == 0 ) {
-        }
-
-// If the edge is vertical
-        else if ( run == 0 ) {
-        }
-
-// So this edge actually has a slope, let'
-        else {
-
-            var slope = rise / run;
-            var theta = Math.atan2( rise, Math.abs(run) );
-            var B     = leeway / Math.cos(theta);
-
-debug_log( start_pt.x+","+start_pt.y +" -> "+ end_pt.x+","+end_pt.y );
-debug_log( "Rise:"  + rise  + " Run:" + run );
-debug_log( "Slope:" + slope + " B:"   + B   );
-
-/*********************************************************************************************************/
-/*********************************************************************************************************/
-
-// Bottom point.y > y
-var f = function( s, e, x ) {
-// --------------------------------------------------
-    var y = (x-s.x)*slope+B+s.y
-debug_log( "PT: " + x+","+y );
-    var p = new GPoint( x, y );
-    var c = map.fromContainerPixelToLatLng(p);
-    return c;
-};
-var glatlng_start = f(start_pt,end_pt,start_pt.x);
-var glatlng_end   = f(start_pt,end_pt,end_pt.x);
-var polyline = new GPolyline([glatlng_start,glatlng_end],"#ff0000",2);
-map.addOverlay(polyline);
-
-// Top point.y < y
-var g = function ( s, e, x ) {
-    var y = (x-s.x)*slope-B+s.y
-    var p = new GPoint( x, y );
-    var c = map.fromContainerPixelToLatLng(p);
-    return c;
-};
-glatlng_start = g(start_pt,end_pt,start_pt.x);
-glatlng_end   = g(start_pt,end_pt,end_pt.x);
-polyline = new GPolyline([glatlng_start,glatlng_end],"#ff0000",2);
-map.addOverlay(polyline);
-
-//  Left? point.y > y
-slope *= -1;
-var h = function ( s, e, x ) {
-    var y = (x-s.x)/slope+s.y
-    var p = new GPoint( x, y );
-    var c = map.fromContainerPixelToLatLng(p);
-    return c;
-};
-glatlng_start = h(start_pt,end_pt,start_pt.x);
-glatlng_end   = h(start_pt,end_pt,end_pt.x);
-polyline = new GPolyline([glatlng_start,glatlng_end],"#00ffff",2);
-map.addOverlay(polyline);
-
-// Right? point.y < y
-var i = function ( s, e, x ) {
-    var y = (x-e.x)/slope+e.y
-    var p = new GPoint( x, y );
-    var c = map.fromContainerPixelToLatLng(p);
-    return c;
-};
-glatlng_start = i(start_pt,end_pt,start_pt.x);
-glatlng_end   = i(start_pt,end_pt,end_pt.x);
-polyline = new GPolyline([glatlng_start,glatlng_end],"#ff0000",2);
-map.addOverlay(polyline);
-
-
-/*********************************************************************************************************/
-/*********************************************************************************************************/
-
-            boundary_data = {
-                edge: i,
-                start_pt: start_pt,
-                end_pt:   end_pt
-            };
-            boundary_data["bottom"] = function ( start_pt, end_pt, point ) { 
-                return point.y > (point.x-start_pt.x)*slope+B+start_pt.y; 
-            };
-            boundary_data["top"]    = function ( start_pt, end_pt,point ) { 
-                return point.y < (point.x-start_pt.x)*slope-B+start_pt.y; 
-            };
-            if (run < 0) slope *= -1;
-            boundary_data["left"]   = function ( start_pt, end_pt,point ) {
-                return point.y < (point.x-start_pt.x)/slope+start_pt.y;
-            };
-            boundary_data["right"]   = function ( start_pt, end_pt,point ) {
-                var y = (point.x-end_pt.x)/slope+end_pt.y;
-                return point.y > y;
-            };
-        }
-
-        edge_boundaries.push( boundary_data );
-
-// Does the bounding box fit? We do this in two parts to short circuit if we can
-        point_prev = point_cur;
-    }
-
-    return edge_boundaries;
-}
-
 function route_locate_edge ( map, route_data, latlon ) {
 // --------------------------------------------------
 // Given a route and X, Y coordinates, this
@@ -390,7 +245,6 @@ function route_locate_edge ( map, route_data, latlon ) {
         marker = null;
     }
 
-//$('#debug').val( "" + (temp++) + "\n" );
     var point_prev           = map.fromLatLngToContainerPixel(route_trace.getVertex(0));
     var route_trace_vertices = route_trace.getVertexCount();
     for ( var i=1; i < route_trace_vertices; i++ ) {
@@ -400,8 +254,8 @@ function route_locate_edge ( map, route_data, latlon ) {
             var latlng_median = map.fromContainerPixelToLatLng(point_median);
             var gicon = new GIcon({
                 image: "css/images/route-control-point.png",
-                iconSize: new GSize(10,10),
-                iconAnchor: new GPoint(5,5)
+                iconSize: new GSize(16,16),
+                iconAnchor: new GPoint(8,8)
             });
             marker = new GMarker( 
                             latlng_median, 
@@ -418,242 +272,6 @@ function route_locate_edge ( map, route_data, latlon ) {
     }
 
     return;
-}
-
-function route_locate_edge2 ( map, route_data, latlon ) {
-// --------------------------------------------------
-// Given a route and X, Y coordinates, this
-// function will attempt to place the X,Y coordinates
-// onto the edge using bounding boxes and then distance 
-// calculations
-//
-
-    var route_trace = route_data["route_trace"];
-    var route_trace_vertices = route_trace.getVertexCount();
-
-// At this point, we can start hunting for edges that
-// may be close to the x,y coordinate we seek
-    var edges_matched = [];
-    var point_prev    = route_trace.getVertex(0);
-    for ( var i = 1; i < route_trace_vertices; i++ ) {
-
-// Create a bounding box
-// We actually don't know which point is higher/lower or
-// left/right. 
-        var point_cur = route_trace.getVertex(i);
-
-// Does the bounding box fit? We do this in two parts to short circuit if we can
-        if ( point_prev.distanceFrom(point_cur) > 0 ) {
-        if ( in_bounds(latlon.lat(),point_prev.lat(),point_cur.lat(),.5,180) ) {
-        if ( in_bounds(latlon.lng(),point_prev.lng(),point_cur.lng(),.5,360) ) {
-            edges_matched.push([
-                point_prev, // index: 0
-                point_cur,  //        1
-                i           //        2 current edge id
-            ]);
-        }}}
-
-// Now the process intensive calculations where we 
-// try and locate the perpendicular distance of x, y
-// from the edge we've just identified
-        point_prev = point_cur;
-
-    }
-
-    if ( edges_matched.length == 0 ) return;
-
-/*            end
- *           /|
- *          / | B
- *      A  /  |
- *        /  _clickpt
- *       / _/
- *  start/   C
- *
- *   A: length of edge
- *   B: distance between end point and click point
- *   C: distance between start point and click point
- *   H: (not marked) distance of click point from edge
- *
- *   Formulas from:
- *    http://softsurfer.com/Archive/algorithm_0101/algorithm_0101.htm
- *    area = .25 * sqrt( 4*a^2*b^2 - (a^2+b^2-c^2)^2 )
- *    H    = area * 2 / A
- *
- *   So:
- *    H    = .5 * sqrt( 4*a^2*b^2 - (a^2+b^2-c^2)^2 ) / A
- */
-
-// Now, we'll go through each of the edges and find the one
-// that is the nearest
-  for ( var i in edges_matched ) {
-    var edge     = edges_matched[i];
-    var start_pt = edge[0];
-    var end_pt   = edge[1];
-    var a = start_pt.distanceFrom( end_pt );
-    var b = end_pt.distanceFrom( latlon );
-    var c = start_pt.distanceFrom( latlon );
-
-    var h = .5 * Math.sqrt(
-                4 * a*a*b*b
-                - Math.pow( a*a + b*b - c*c, 2 )
-            ) / a;
-    var s = b + c;
-
-// Now load up the values for sorting
-    edge.push(
-      h, // index: 3 (see above)
-      a, //        4
-      b, //        5
-      c, //        6
-      s  //        7
-    );
-  }
-
-// Now let's sort the edges for best match
-  edges_matched.sort(function(a,b){
-    return a[7] - b[7];
-  });
-
-// Return the edge that the user was nearest to
-  var edge_best = edges_matched[0];
-
-/*
-  var l = "";
-  for (var i in edges_matched) {
-    l += edges_matched[i][2] 
-          + " H:" +  edges_matched[i][3] 
-          + " A:" +  edges_matched[i][4] 
-          + " B:" +  edges_matched[i][5] 
-          + " C:" +  edges_matched[i][6] 
-          + "\n";
-  }
-  $('#debug').val(l);
-  */
-
-/*
- * Now, we want to identify the point on the edge
- * that is best match for the user. Since we know
- * H as well as C, we can find out how far along 
- * A we have travelled using rearranging the pythagorean
- * equation
- *
- * c^2 = apartial^2 + h^2
- * apartial = sqrt(c^2 - h^2)
- *
- * This will yield a GLatLng point that can be used
- * to place a marker on the edge for dragging or 
- * whatever
- *
- */
-  var start_pt = edge_best[0];
-  var end_pt   = edge_best[1];
-  var h        = edge_best[3];
-  var a        = edge_best[4];
-  var c        = edge_best[6];
-  var apartial = Math.sqrt( Math.abs( c*c - h*h ) );
-  var aratio   = apartial / a;
-  var aplat    = start_pt.lat() + ( end_pt.lat() - start_pt.lat() ) * aratio;
-  var aplng    = start_pt.lng() + ( end_pt.lng() - start_pt.lng() ) * aratio;
-  var appt     = new GLatLng(aplat,aplng);
-  edge_best.unshift( appt );
-//  edge_best.unshift( start_pt );
-
-  return edge_best;
-}
-
-function in_bounds ( v, a, b, pad, wrap ) {
-// --------------------------------------------------
-// Assuming that the world wraps at 360degrees,
-// let's just check to see if the value "v"
-// is between the values a and b
-//
-
-    var l = a < b ? a : b; // lesser
-    var g = a < b ? b : a; // greater
-    var d = Math.abs( a-b );
-
-// We will need to wrap
-    if ( d > wrap / 2 )  {
-        l += wrap;
-        var t = l;
-        l = g;
-        g = t;
-        v += wrap;
-    }
-
-// Now let's test the bounds and return a true
-// value if it's okay
-    return ((l-pad) < v && v < (g+pad));
-}
-
-/*
- * Menu Functions
- */
-
-function menuaction_directions_here (menu_item,menu) {
-// --------------------------------------------------
-  alert(menu_item);
-}
-
-function menuaction_place_waypoint(menu_item,menu) {
-// --------------------------------------------------
-  alert(menu_item);
-}
-
-/*
- * Basic Functions
- */
-
-
-function overlay_toggle ( overlay_name ) {
-// --------------------------------------------------
-// Turns on and off overlays on the map
-//
-
-// Turn off?
-  if ( overlays_toggled[overlay_name] ) {
-    var overlay = overlays_toggled[overlay_name];
-    overlays_toggled[overlay_name] = null;
-    map.removeOverlay(overlay);
-  }
-
-// Turn on
-  else {
-    var overlay;
-    if ( overlay_name == "streetview" ) {
-        overlay = new GStreetviewOverlay();
-    }
-    else if ( overlay_name == "wikipedia" ) {
-        overlay = new GLayer("org.wikipedia.en");
-    }
-    else if ( overlay_name == "panoramio" ) {
-        overlay = new GLayer("com.panoramio.all");
-    }
-    else if ( overlay_name == "webcams" ) {
-        overlay = new GLayer("com.google.webcams");
-    }
-    else if ( overlay_name == "traffic" ) {
-        overlay = new GTrafficOverlay({incidents: true});
-    }
-    else if ( overlay_name == "videos" ) {
-        overlay = new GLayer("com.youtube.all");
-    }
-    if ( overlay ) {
-      overlays_toggled[overlay_name] = overlay;
-      map.addOverlay(overlay);
-    }
-  }
-}
-
-function debug_log ( msg ) {
-// --------------------------------------------------
-    if ( msg == "" ) {
-        $('#debug').val("");
-    }
-    else {
-        $('#debug').val( $('#debug').val() + msg + "\n" );
-    }
 }
 
 function edge_click_within ( start_pt, end_pt, click_pt, r ) {
@@ -746,4 +364,75 @@ function edge_click_within ( start_pt, end_pt, click_pt, r ) {
     var np = new GPoint( nx, ny );
     return np;
 }
+
+
+/*
+ * Menu Functions
+ */
+
+function menuaction_directions_here (menu_item,menu) {
+// --------------------------------------------------
+  alert(menu_item);
+}
+
+function menuaction_place_waypoint(menu_item,menu) {
+// --------------------------------------------------
+  alert(menu_item);
+}
+
+/*
+ * Basic Functions
+ */
+
+
+function overlay_toggle ( overlay_name ) {
+// --------------------------------------------------
+// Turns on and off overlays on the map
+//
+
+// Turn off?
+  if ( overlays_toggled[overlay_name] ) {
+    var overlay = overlays_toggled[overlay_name];
+    overlays_toggled[overlay_name] = null;
+    map.removeOverlay(overlay);
+  }
+
+// Turn on
+  else {
+    var overlay;
+    if ( overlay_name == "streetview" ) {
+        overlay = new GStreetviewOverlay();
+    }
+    else if ( overlay_name == "wikipedia" ) {
+        overlay = new GLayer("org.wikipedia.en");
+    }
+    else if ( overlay_name == "panoramio" ) {
+        overlay = new GLayer("com.panoramio.all");
+    }
+    else if ( overlay_name == "webcams" ) {
+        overlay = new GLayer("com.google.webcams");
+    }
+    else if ( overlay_name == "traffic" ) {
+        overlay = new GTrafficOverlay({incidents: true});
+    }
+    else if ( overlay_name == "videos" ) {
+        overlay = new GLayer("com.youtube.all");
+    }
+    if ( overlay ) {
+      overlays_toggled[overlay_name] = overlay;
+      map.addOverlay(overlay);
+    }
+  }
+}
+
+function debug_log ( msg ) {
+// --------------------------------------------------
+    if ( msg == "" ) {
+        $('#debug').val("");
+    }
+    else {
+        $('#debug').val( $('#debug').val() + msg + "\n" );
+    }
+}
+
 
