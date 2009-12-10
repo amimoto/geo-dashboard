@@ -41,18 +41,36 @@ $(function() {
     {theme:'vista'}
   );
 
-// Setup the map view
+// Setup the map view if we can....
   if (GBrowserIsCompatible()) {
     map        = new GMap2(document.getElementById("map_canvas"));
     geocoder   = new GClientGeocoder();
     directions = new GDirections();
 
-    map.setCenter(new GLatLng(CFG["defaults"]["map_center"][0],CFG["defaults"]["map_center"][1]),CFG["defaults"]["map_zoom"]);
+// Create a map and let's try and center it...
+    map.setCenter(
+        new GLatLng(CFG["defaults"]["map_center"][0],
+                    CFG["defaults"]["map_center"][1]),
+                    CFG["defaults"]["map_zoom"]
+    );
     map.setUIToDefault();
 
+// When we successfully load some direcitons
     GEvent.addListener( directions, "load", directions_event_load );
 
-    map.getDragObject().setDraggingCursor("crosshair");
+    GEvent.addListener( map, "dragstart", 
+        function () {
+            debug_log("map dragging");
+        }
+    );
+    
+    GEvent.addListener( map, "dragend", 
+        function () {
+            debug_log("map moved");
+        }
+    );
+    
+
   };
 
 });
@@ -147,6 +165,9 @@ function directions_event_load () {
     query:           directions_query
   };
   route_list.push(route_lookup_rec);
+
+// DEBUG
+    debug_log(route_trace.getVertexCount());
 
 // We want to know when the mouse enters, or leaves a route
 // so that we can add the route information to the context menu
@@ -304,6 +325,31 @@ function edge_click_within ( start_pt, end_pt, click_pt, r ) {
 // within the allowed ranges of the edge. Note that
 // all the points should be of GPoint using the same axis
 //
+
+// A quick check to see if we're in the soft bounds. THis creates
+// a bounding box for the edge so we can quickly see if the clickpt
+// is within range of this edge
+    if ( end_pt.y > start_pt.y ) {
+        if ( end_pt.y   + r < click_pt.y ) return;
+        if ( start_pt.y - r > click_pt.y ) return;
+    }
+    else {
+        if ( start_pt.y + r < click_pt.y ) return;
+        if ( end_pt.y   - r > click_pt.y ) return;
+    }
+    if ( end_pt.x > start_pt.x ) {
+        if ( end_pt.x   + r < click_pt.x ) return;
+        if ( start_pt.x - r > click_pt.x ) return;
+    }
+    else {
+        if ( start_pt.x + r < click_pt.x ) return;
+        if ( end_pt.x   - r > click_pt.x ) return;
+    }
+
+// So the point is within range of this edge. Let's
+// run the stricter calculations through and if it
+// still matches, provide the coordinates of the
+// best intercept point on the edge
     var rise      = end_pt.y - start_pt.y;
     var run       = end_pt.x - start_pt.x;
 
