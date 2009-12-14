@@ -10,6 +10,8 @@ var state_dragging    = null;
 var marker_dragging   = null;
 var directions_query  = '';
 
+// We keep track of the routes that are currently active
+// on the map through the following variables
 var route_count       = 0;
 var route_list        = [];
 var route_menu_lookup = {};
@@ -160,6 +162,7 @@ function directions_event_load () {
     route_info:      route_info,
     route_trace:     route_trace,
     route_copyright: directions.getCopyrightsHtml(),
+    route_placemarks: [],
     map_zoom:        map_zoom,
     summary:         summary,
     query:           directions_query
@@ -168,6 +171,20 @@ function directions_event_load () {
 
 // DEBUG
     debug_log(route_trace.getVertexCount());
+    debug_log("Markers:");
+
+    var my_marker;
+    var i = 0;
+    while ( my_marker = directions.getMarker(i) ) {
+
+        var placemark = directions.getGeocode(i);
+        route_lookup_rec["route_placemarks"].push(placemark);
+
+// Add the tie point to the route
+        map.addOverlay(my_marker);
+
+        i++;
+    }
 
 // We want to know when the mouse enters, or leaves a route
 // so that we can add the route information to the context menu
