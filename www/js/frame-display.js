@@ -71,7 +71,10 @@ $(function() {
             debug_log("map moved");
         }
     );
-    
+
+// Let's try and load the new object
+    var g = new route_directions({});
+    g.search(['vancouver','west vancouver']);
 
   };
 
