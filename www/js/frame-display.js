@@ -73,7 +73,12 @@ $(function() {
     );
 
 // Let's try and load the new object
-    var g = new route_directions({});
+    var g = new route_directions({
+        map: map,
+        callback: function (me) {
+            me.polyline.show();
+        }
+    });
     g.search(['vancouver','west vancouver']);
 
   };

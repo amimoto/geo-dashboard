@@ -1,28 +1,33 @@
+
+
+/***********************************************************************
+ * route_directions OBJECT
+ ***********************************************************************/
 function route_directions ( opts ) {
 /* --------------------------------------------------
  * This object handles a single Google Maps route
  */ 
 
-    this.map_base         = opts["map"];
+    this.map         = opts["map"];
     this.route_travelmode = opts["travelmode"] ? opts["travelmode"] : G_TRAVEL_MODE_DRIVING;
     this.route_waypoints  = opts["waypoints"]  ? opts["waypoints"]  : [];
     var directions = new GDirections();
     this.route_directions = directions;
     this.route_selected   = 0;
-    this.route_trace      = null;
+    this.polyline         = null;
     this.callback         = opts["callback"]   ? opts["callback"] 
                                                : function (obj) {};
-    var closure_object = this;
+    var me = this;
 
 // Execute searching of directions...
     this.search = function ( waypoints ) {
     // --------------------------------------------------
-        if (waypoints) closure_object.route_waypoints = waypoints;
-        var route_string = closure_object.route_query_string();
-        closure_object.route_directions.load(
+        if (waypoints) me.route_waypoints = waypoints;
+        var route_string = me.route_query_string();
+        me.route_directions.load(
             route_string,
             {
-                travelMode:  closure_object.route_travelmode,
+                travelMode:  me.route_travelmode,
                 getPolyline: true,
                 getSteps:    true
             }
@@ -32,7 +37,7 @@ function route_directions ( opts ) {
 // To handle the waypoint updates
     this.waypoint_insert = function ( insert_after_index, position_name ) {
     // --------------------------------------------------
-        var route_waypoints = closure_object.route_waypoints;
+        var route_waypoints = me.route_waypoints;
         route_waypoints.splice( insert_after_index, 0, position_name );
         return route_waypoints;
     };
@@ -40,7 +45,7 @@ function route_directions ( opts ) {
 // To handle the waypoint modification
     this.waypoint_modify = function ( index_id, position_name ) {
     // --------------------------------------------------
-        var route_waypoints = closure_object.route_waypoints;
+        var route_waypoints = me.route_waypoints;
         route_waypoints.splice( index_id, 1, position_name );
         return route_waypoints;
     };
@@ -48,7 +53,7 @@ function route_directions ( opts ) {
 // To handle the waypoint deletion
     this.waypoint_remove = function ( index_id ) {
     // --------------------------------------------------
-        var route_waypoints = closure_object.route_waypoints;
+        var route_waypoints = me.route_waypoints;
         route_waypoints.splice( index_id, 1 );
         return route_waypoints;
     };
@@ -56,9 +61,79 @@ function route_directions ( opts ) {
 // To get a string representation of the query
     this.route_query_string = function () {
     // --------------------------------------------------
-        var str = 'from: ' + closure_object.route_waypoints.join(" to: ");
+        var str = 'from: ' + me.route_waypoints.join(" to: ");
         return str;
     }
+
+// Show and setup the ability to modify the data
+    this.show = function () {
+    // --------------------------------------------------
+        if (!me.polyline) return;
+        me.polyline.show();
+
+    // Setup event handles
+    }
+
+// Hide and remove the ability to show the data
+    this.show = function () {
+    // --------------------------------------------------
+        if (!me.polyline) return;
+        me.polyline.hide();
+    }
+
+// Load up google's directions and setup our hook
+    GEvent.addListener(
+        directions, "load", function () {
+            me.polyline = new polyline_handle({
+                                map: me.map,
+                                polyline: me.route_directions.getPolyline()
+                            });
+            me.callback(me);
+        }
+    );
+};
+
+
+/***********************************************************************
+ * polyline_handle OBJECT
+ ***********************************************************************/
+function polyline_handle ( opts ) {
+/* --------------------------------------------------
+ * Polyline handler. A wrapper for GPolyline for
+ * some fun tricks
+ */ 
+
+    this.map = opts["map"];
+    this.polyline = opts["polyline"];
+    this.visible = null;
+
+    var me = this;
+
+    this.show = function () {
+    // --------------------------------------------------
+    // Shows the polyline
+    //
+        if ( me.visible ) return 1;
+        me.map.addOverlay(me.polyline);
+        return 1;
+    };
+
+    this.hide = function () {
+    // --------------------------------------------------
+    // Hides the polyline from the map
+    //
+        if ( !me.visible ) return 1;
+        me.map.removeOverlay(me.polyline);
+        return 1;
+    }
+
+    this.toggle = function () {
+    // --------------------------------------------------
+    // Show/Hides the polyline from the map with a single
+    // function
+    //
+        return me.visible ?  me.hide() : me.show();
+    };
 
     this.route_locate_edge = function ( click_loc ) {
     // --------------------------------------------------
@@ -68,14 +143,14 @@ function route_directions ( opts ) {
     // calculations
     //
 
-        var route_trace          = closure_object.route_trace;
-        var route_trace_vertices = route_trace.getVertexCount();
-        var map                  = closure_object.map_base;
-        var point                = map.fromLatLngToContainerPixel(click_loc);
+        var polyline          = me.polyline;
+        var polyline_vertices = polyline.getVertexCount();
+        var map               = me.map;
+        var point             = map.fromLatLngToContainerPixel(click_loc);
 
-        var point_prev           = map.fromLatLngToContainerPixel(route_trace.getVertex(0));
-        for ( var i=1; i < route_trace_vertices; i++ ) {
-            var point_cur = map.fromLatLngToContainerPixel(route_trace.getVertex(i));
+        var point_prev        = map.fromLatLngToContainerPixel(polyline.getVertex(0));
+        for ( var i=1; i < polyline_vertices; i++ ) {
+            var point_cur = map.fromLatLngToContainerPixel(polyline.getVertex(i));
             var point_median = edge_click_within( point_prev, point_cur, point, 10 );
             if ( point_median ) {
                 return {
@@ -205,13 +280,5 @@ function route_directions ( opts ) {
         return np;
     };
 
-// Load up google's directions and setup our hook
-    GEvent.addListener(
-        directions, "load", function () {
-            closure_object.route_trace = closure_object.route_directions.getPolyline();
-            closure_object.callback(closure_object);
-        }
-    );
-
-};
+}
 
