@@ -76,7 +76,7 @@ $(function() {
     var g = new route_directions({
         map: map,
         callback: function (me) {
-            me.polyline.show();
+            me.show();
         }
     });
     g.search(['vancouver','west vancouver']);

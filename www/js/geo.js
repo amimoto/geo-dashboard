@@ -70,23 +70,48 @@ function route_directions ( opts ) {
     // --------------------------------------------------
         if (!me.polyline) return;
         me.polyline.show();
-
-    // Setup event handles
     }
 
 // Hide and remove the ability to show the data
-    this.show = function () {
+    this.hide = function () {
     // --------------------------------------------------
         if (!me.polyline) return;
         me.polyline.hide();
     }
 
+// Mousemove event
+    this.event_mousemove = function ( latlon ) {
+    // --------------------------------------------------
+    // If we're hovering over a route, let's find the point that's
+    // closest to an edge and mark it with a vertex manipulator
+    //
+        me.polyline.event_mousemove(latlon);
+    };
+
+// When a newly created drag node has been moved
+    this.event_edgedragend = function ( polyline ) {
+    // --------------------------------------------------
+    // This is different than dragging an end marker. This
+    // handles the autocreation and insertion of a new 
+    // detour point in the map's direction finding route
+    //
+        debug_log(polyline.drag_edge.i);
+    };
+
 // Load up google's directions and setup our hook
     GEvent.addListener(
         directions, "load", function () {
+
+// If the polyline already exists, we should probably nuke the existing
+            if ( me.polyline ) {
+            }
+
+// Now we can go ahead and setup the standard polyline stuff
             me.polyline = new polyline_handle({
-                                map: me.map,
-                                polyline: me.route_directions.getPolyline()
+                                map:        me.map,
+                                polyline:   me.route_directions.getPolyline(),
+                                draggable:  true,
+                                cb_dragend: function (polyline) { me.event_edgedragend(polyline) }
                             });
             me.callback(me);
         }
@@ -103,9 +128,20 @@ function polyline_handle ( opts ) {
  * some fun tricks
  */ 
 
-    this.map = opts["map"];
-    this.polyline = opts["polyline"];
-    this.visible = null;
+    this.map           = opts["map"];
+    this.polyline      = opts["polyline"];
+    this.visible       = null;
+    this.draggable     = opts["draggable"] ? opts["draggable"] : null;
+    this.cb_dragstart  = opts["cb_polyline"]  ? opts["cb_polyline"]  : null;
+    this.cb_dragend    = opts["cb_dragend"]   ? opts["cb_dragend"]   : null;
+    this.cb_mousemove  = opts["cb_dragstart"] ? opts["cb_dragstart"] : null;
+    this.drag_marker   = null;
+    this.drag_edge     = null;
+    this.gicon         = new GIcon({
+                                  image:      "css/images/route-control-point.png",
+                                  iconSize:   new GSize(16,16),
+                                  iconAnchor: new GPoint(8,8)
+                             });
 
     var me = this;
 
@@ -115,6 +151,23 @@ function polyline_handle ( opts ) {
     //
         if ( me.visible ) return 1;
         me.map.addOverlay(me.polyline);
+
+
+// Setup the draggability event
+        if ( me.draggable ) {
+          me.event_mousemove_handle = GEvent.addListener(
+                me.map,
+                'mousemove',
+                function(latlon) {
+
+// Ignore if we're dragging FIXME: not sure if this is the right place
+// to find out if something is being dragged
+                    if ( me.state_dragging ) return;
+                    me.event_mousemove( latlon );
+                }
+          );
+        }
+
         return 1;
     };
 
@@ -124,6 +177,10 @@ function polyline_handle ( opts ) {
     //
         if ( !me.visible ) return 1;
         me.map.removeOverlay(me.polyline);
+        if ( me.event_mousemove_handle ) {
+            GEvent.removeListener( me.event_mousemove_handle );
+            me.event_mousemove_handle = null;
+        }
         return 1;
     }
 
@@ -133,6 +190,59 @@ function polyline_handle ( opts ) {
     // function
     //
         return me.visible ?  me.hide() : me.show();
+    };
+    
+    this.event_mousemove = function ( latlon ) {
+    // --------------------------------------------------
+    // Handles the drawing of a edit point along the length
+    // of the edge
+    //
+    //
+        var drag_edge  = me.route_locate_edge( latlon );
+
+// Ignore if we're dragging
+        if ( me.state_dragging ) return;
+
+// If the drag_edge is set, this means that there's an edge that's close
+// and we now have a starting coordinate for this point
+        if ( drag_edge ) {
+          var latlng_median = map.fromContainerPixelToLatLng(drag_edge["point"]);
+          me.drag_edge = drag_edge;
+
+// Only create the marker if we need to
+          if ( me.drag_marker ) {
+            me.drag_marker.setLatLng(latlng_median);
+          }
+// Marker doesn't exist. Let's initialize it
+          else {
+
+            var marker = new GMarker( 
+              latlng_median, 
+              { icon: me.gicon, draggable: true } 
+            );
+
+// Add the tie point to the route
+            map.addOverlay(marker);
+            me.drag_marker = marker;
+
+// Setup the events that will allow us to drag the new node point
+// from one place to another. How exciting! :)
+            GEvent.addListener(marker, "dragstart", function() {
+              me.state_dragging = 1;
+              if ( me.cb_dragstart ) me.cb_dragstart(me);
+            });
+            GEvent.addListener(marker, "dragend", function() {
+              me.state_dragging = null;
+              if ( me.cb_dragend ) me.cb_dragend(me);
+            });
+        }
+      }
+      else {
+          map.removeOverlay(me.drag_marker);
+          me.drag_marker = null;
+      }
+      return 1;
+
     };
 
     this.route_locate_edge = function ( click_loc ) {
@@ -279,6 +389,18 @@ function polyline_handle ( opts ) {
         var np = new GPoint( nx, ny );
         return np;
     };
-
 }
+
+
+function debug_log ( msg ) {
+// --------------------------------------------------
+    $('#debug').val( $('#debug').val() + msg + "\n" );
+}
+
+
+function debug_logcl ( msg ) {
+// --------------------------------------------------
+    $('#debug').val( msg + "\n" );
+}
+
 
