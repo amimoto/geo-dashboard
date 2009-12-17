@@ -186,7 +186,9 @@ function route_directions ( opts ) {
                                 draggable:  true,
                                 cb_dragend: function (latlon,polyline) { me.event_edgedragend(latlon,polyline) }
                             });
+
             me.callback(me);
+
         }
     );
 };
@@ -202,6 +204,7 @@ function polyline_handle ( opts ) {
  */ 
 
     this.map           = opts["map"];
+    this.map_reposition   = true;
     this.polyline      = opts["polyline"];
     this.visible       = null;
     this.draggable     = opts["draggable"]    ? opts["draggable"]    : null;
@@ -241,6 +244,13 @@ function polyline_handle ( opts ) {
                     me.event_mousemove( latlon );
                 }
           );
+        }
+
+// If we want the map to zoom to fill the space
+        if ( me.map_reposition ) {
+            var bounds = me.polyline.getBounds();
+            var bound_zoom_level = me.map.getBoundsZoomLevel(bounds);
+            me.map.setCenter( bounds.getCenter(), bound_zoom_level );
         }
 
         return 1;
