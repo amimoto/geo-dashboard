@@ -7,7 +7,7 @@ var CFG = {
     },
     defaults: {
       map_center:[49.315144,-123.138893], 
-      map_zoom: 14,
+      map_zoom: 13,
     },
 };
 

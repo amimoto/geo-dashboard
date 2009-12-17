@@ -1,5 +1,3 @@
-
-
 /***********************************************************************
  * route_directions OBJECT
  ***********************************************************************/
@@ -8,10 +6,10 @@ function route_directions ( opts ) {
  * This object handles a single Google Maps route
  */ 
 
-    this.map         = opts["map"];
+    this.map              = opts["map"];
     this.route_travelmode = opts["travelmode"] ? opts["travelmode"] : G_TRAVEL_MODE_DRIVING;
     this.route_waypoints  = opts["waypoints"]  ? opts["waypoints"]  : [];
-    var directions = new GDirections();
+    var directions        = new GDirections();
     this.route_directions = directions;
     this.route_selected   = 0;
     this.polyline         = null;
@@ -75,7 +73,7 @@ function route_directions ( opts ) {
 // Hide and remove the ability to show the data
     this.hide = function () {
     // --------------------------------------------------
-        if (!me.polyline) return;
+        if (me.polyline) return;
         me.polyline.hide();
     }
 
@@ -89,13 +87,45 @@ function route_directions ( opts ) {
     };
 
 // When a newly created drag node has been moved
-    this.event_edgedragend = function ( polyline ) {
+    this.event_edgedragend = function ( latlon, polyline ) {
     // --------------------------------------------------
     // This is different than dragging an end marker. This
     // handles the autocreation and insertion of a new 
     // detour point in the map's direction finding route
     //
-        debug_log(polyline.drag_edge.i);
+
+    // The neat thing about the polyline events is that
+    // it gives us which part of the polyline was used
+    // to drag from. What we still want, for detour 
+    // addition, is to know in between which two detours
+    // we wish to add this new reroute. So we need to
+    // translate between the dragged edge's index to the 
+    // vertex edge. In this case, if the drag edge index
+    // is equal to "0', then the edge goes between vertex
+    // "0" and "1".
+        var drag_edge = polyline.drag_edge;
+        var drag_edge_index = drag_edge.i;
+
+    // So let's find out after which geocode this edge 
+    // is found
+        var marker_verticies = me.marker_verticies;
+        var geocode_vertex_match = null;
+        for (var i=0;i<marker_verticies.length;i++) {
+            if ( marker_verticies[i] < drag_edge_index ) 
+                continue;
+            geocode_vertex_match = i;
+            break;
+        }
+
+    // Now add the new location to the waypoint list
+    // and request that a new route be created
+        var waypoint_name = latlon.lat() + ", " + latlon.lng();
+        debug_log(waypoint_name);
+        me.waypoint_insert(geocode_vertex_match,waypoint_name);
+
+    // Now perform the search again
+        me.search();
+
     };
 
 // Load up google's directions and setup our hook
@@ -104,14 +134,57 @@ function route_directions ( opts ) {
 
 // If the polyline already exists, we should probably nuke the existing
             if ( me.polyline ) {
+                me.polyline.destroy();
             }
+
+// Upon loading, we also need to know what each search location translates to
+            var directions = me.route_directions; 
+            var polyline = directions.getPolyline();
+            var geocodes = [];
+            var markers = [];
+            for ( var i = 0; i < directions.getNumGeocodes(); i++ ) {
+                var geocode = directions.getGeocode(i);
+                geocodes.push( geocode );
+                var marker = directions.getMarker(i);
+                markers.push(marker);
+            }
+            me.route_geocodes = geocodes;
+            me.route_markers  = markers;
+
+// So for each waypoint that we want to visit, it should be related to
+// a single point in the polyline list. We will go through and match up
+// each waypoint (aka. geocode) to a vertex so when we perform route
+// detour addition, we can easily figure out at which point in the 
+// detour list we need to add (then recalculate)
+            var polyline_vertices = polyline.getVertexCount();
+            var j = 0;
+            var match_coords = markers[j].getLatLng();
+            var marker_verticies = [];
+            for ( var i = 0; i < polyline_vertices; i++ ) {
+                var vertex = polyline.getVertex(i);
+                if ( Math.abs( vertex.lng() - match_coords.lng() ) > .00001 ) continue;
+                if ( Math.abs( vertex.lat() - match_coords.lat() ) > .00001 ) continue;
+                marker_verticies[j] = i;
+                var marker = markers[++j];
+                if ( !marker ) break;
+                match_coords = marker.getLatLng();
+            }
+            me.marker_verticies = marker_verticies;
+
+
+            debug_logcl();
+            for (var i=0;i<geocodes.length;i++) {
+                var geocode = geocodes[i];
+                var vertex = marker_verticies[i];
+                debug_log( i + ":" + vertex + " -> " + geocode.address);
+            };
 
 // Now we can go ahead and setup the standard polyline stuff
             me.polyline = new polyline_handle({
                                 map:        me.map,
-                                polyline:   me.route_directions.getPolyline(),
+                                polyline:   polyline,
                                 draggable:  true,
-                                cb_dragend: function (polyline) { me.event_edgedragend(polyline) }
+                                cb_dragend: function (latlon,polyline) { me.event_edgedragend(latlon,polyline) }
                             });
             me.callback(me);
         }
@@ -131,12 +204,13 @@ function polyline_handle ( opts ) {
     this.map           = opts["map"];
     this.polyline      = opts["polyline"];
     this.visible       = null;
-    this.draggable     = opts["draggable"] ? opts["draggable"] : null;
+    this.draggable     = opts["draggable"]    ? opts["draggable"]    : null;
     this.cb_dragstart  = opts["cb_polyline"]  ? opts["cb_polyline"]  : null;
     this.cb_dragend    = opts["cb_dragend"]   ? opts["cb_dragend"]   : null;
     this.cb_mousemove  = opts["cb_dragstart"] ? opts["cb_dragstart"] : null;
     this.drag_marker   = null;
     this.drag_edge     = null;
+    this.mouse_latlon  = null;
     this.gicon         = new GIcon({
                                   image:      "css/images/route-control-point.png",
                                   iconSize:   new GSize(16,16),
@@ -152,13 +226,14 @@ function polyline_handle ( opts ) {
         if ( me.visible ) return 1;
         me.map.addOverlay(me.polyline);
 
-
 // Setup the draggability event
         if ( me.draggable ) {
           me.event_mousemove_handle = GEvent.addListener(
                 me.map,
                 'mousemove',
                 function(latlon) {
+
+                    me.mouse_latlon = latlon;
 
 // Ignore if we're dragging FIXME: not sure if this is the right place
 // to find out if something is being dragged
@@ -175,7 +250,7 @@ function polyline_handle ( opts ) {
     // --------------------------------------------------
     // Hides the polyline from the map
     //
-        if ( !me.visible ) return 1;
+        if ( me.visible ) return 1;
         me.map.removeOverlay(me.polyline);
         if ( me.event_mousemove_handle ) {
             GEvent.removeListener( me.event_mousemove_handle );
@@ -191,6 +266,19 @@ function polyline_handle ( opts ) {
     //
         return me.visible ?  me.hide() : me.show();
     };
+
+    this.destroy = function () {
+    // --------------------------------------------------
+    // Remove all objects that are associated with this
+    // polyline. Cleanup and poof, it's gone
+    //
+        this.hide();
+        if (me.event_mousemove_handle) GEvent.removeListener(me.event_mousemove_handle);
+        if (me.event_dragstart_handle) GEvent.removeListener(me.event_dragstart_handle);
+        if (me.event_dragend_handle)   GEvent.removeListener(me.event_dragend_handle);
+        me.polyline = null;
+        debug_log('destroyed!');
+    }
     
     this.event_mousemove = function ( latlon ) {
     // --------------------------------------------------
@@ -227,17 +315,19 @@ function polyline_handle ( opts ) {
 
 // Setup the events that will allow us to drag the new node point
 // from one place to another. How exciting! :)
-            GEvent.addListener(marker, "dragstart", function() {
+            me.event_dragstart_handle = GEvent.addListener(marker, "dragstart", function() {
               me.state_dragging = 1;
-              if ( me.cb_dragstart ) me.cb_dragstart(me);
+              if ( me.cb_dragstart ) me.cb_dragstart(me.mouse_latlon,me);
             });
-            GEvent.addListener(marker, "dragend", function() {
+            me.event_dragend_handle = GEvent.addListener(marker, "dragend", function() {
               me.state_dragging = null;
-              if ( me.cb_dragend ) me.cb_dragend(me);
+              map.removeOverlay(me.drag_marker);
+              me.drag_marker = null;
+              if ( me.cb_dragend ) me.cb_dragend(me.mouse_latlon,me);
             });
         }
       }
-      else {
+      else if (me.drag_marker) {
           map.removeOverlay(me.drag_marker);
           me.drag_marker = null;
       }
@@ -389,18 +479,6 @@ function polyline_handle ( opts ) {
         var np = new GPoint( nx, ny );
         return np;
     };
-}
-
-
-function debug_log ( msg ) {
-// --------------------------------------------------
-    $('#debug').val( $('#debug').val() + msg + "\n" );
-}
-
-
-function debug_logcl ( msg ) {
-// --------------------------------------------------
-    $('#debug').val( msg + "\n" );
 }
 
 
