@@ -72,6 +72,7 @@ $(function() {
         }
     );
 
+/*
 // Let's try and load the new object
     var g = new route_directions({
         map: map,
@@ -80,6 +81,7 @@ $(function() {
         }
     });
     g.search(['vancouver','west vancouver']);
+*/
 
   };
 
