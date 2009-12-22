@@ -1,5 +1,20 @@
 var gps_marker = null;
 
+var map        = null;
+
+var route_menu_lookup = {};
+var menu_proto = [ 
+    null, // used to show what the location is
+    $.contextMenu.separator, 
+    { 'Get Directions':       menuaction_directions_here },
+    { 'Save Directions':      menuaction_directions_here },
+    { 'Load Directions':      menuaction_directions_load },
+    { 'Directions from here': menuaction_directions_here },
+    { 'Directions to here':   menuaction_directions_here },
+    { 'Place Waypoint':       menuaction_place_waypoint  } 
+  ]; 
+
+
 var tics_last  = 0;
 var tics_start = new Date();
 
@@ -10,6 +25,46 @@ var poll_pause       = 0;
  * INITIALIZATION
  ***************************************************/
 $(function(){
+
+// JQuery UI settings
+  $('#map_canvas').contextMenu(
+    contextmenu_event_show,
+    {theme:'vista'}
+  );
+
+// JQuery UI Dialog
+    $('#dialog').dialog({
+        autoOpen: false,
+        width: 600,
+        buttons: {
+            "Ok": function() {
+                $(this).dialog("close");
+            },
+            "Cancel": function() {
+                $(this).dialog("close");
+            }
+        }
+    });
+
+// Setup the GMap interface
+  if (GBrowserIsCompatible()) {
+    map        = new GMap2(document.getElementById("map_canvas"));
+
+// Create a map and let's try and center it...
+    map.setCenter(
+        new GLatLng(CFG["defaults"]["map_center"][0],
+                    CFG["defaults"]["map_center"][1]),
+                    CFG["defaults"]["map_zoom"]
+    );
+    map.setUIToDefault();
+    window_event_resize();
+    window.onresize = window_event_resize;
+  };
+
+// Setup the main toolbar
+    $(".draggable").draggable();
+    $("#accordion").accordion({ header: "h3", autoHeight: false });
+
 // Setup the GPS position poll
     $().everyTime( tics_status_poll, gps_status_poll );
 });
@@ -17,6 +72,49 @@ $(function(){
 /***************************************************
  * PERIODIC EVENTS
  ***************************************************/
+function window_event_resize () {
+// --------------------------------------------------
+  $('.fill_page').css("width",window.innerWidth)
+                 .css("height",window.innerHeight);
+}
+
+function contextmenu_event_show (cmenu,t,e) {
+// --------------------------------------------------
+  var pixel        = new GPoint(e.pageX, e.pageY);
+  var latlon       = map.fromContainerPixelToLatLng(pixel);
+  var latlon_str   = sprintf( "%.05f,%.05f", latlon.lng(), latlon.lat() );
+  var option_first = {};
+
+// Add the base options in
+  option_first[latlon_str] = function(menuItem,menu) {  
+    window.prompt(
+        "Location Coordinates (longitude,latitude)",
+        latlon.lng()+","+latlon.lat()
+    )
+  };
+  menu_proto[0] = option_first;
+  var menu_full = menu_proto.slice();
+
+// If the user has right clicked while on a route, let's add that in too
+  var routes_hovered = 0;
+  for (i in route_menu_lookup ) {
+
+// Add a separator if it's the first entry
+    if ( routes_hovered == 0 )
+      menu_full.push($.contextMenu.separator);
+
+// Add a menu item
+    var route_info = route_menu_lookup[i];
+    var menu_new = {};
+    menu_new[route_info.query] = function(){};
+    menu_full.push(menu_new);
+
+    routes_hovered++;
+  }
+
+  return menu_full;
+}
+
 function gps_status_poll () {
 // --------------------------------------------------
 // Request an update from the server every tics_status_poll 
@@ -62,3 +160,38 @@ function gps_status_poll () {
     );
 }
 
+
+/*
+ * Menu Functions
+ */
+
+function menuaction_directions_load (menu_item,menu) {
+// --------------------------------------------------
+    $('#dialog').dialog('open');
+}
+
+function menuaction_directions_here (menu_item,menu) {
+// --------------------------------------------------
+  alert(menu_item);
+}
+
+function menuaction_place_waypoint(menu_item,menu) {
+// --------------------------------------------------
+  alert(menu_item);
+}
+
+function debug_log ( msg ) {
+// --------------------------------------------------
+    if ( msg == "" ) {
+        $('#debug').val("");
+    }
+    else {
+        $('#debug').val( $('#debug').val() + msg + "\n" );
+    }
+}
+
+
+function debug_logcl ( msg ) {
+// --------------------------------------------------
+    $('#debug').val( msg == null ? "" : msg + "\n" );
+}

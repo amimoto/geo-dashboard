@@ -115,7 +115,7 @@ warn "Request: $fpath\n";
                 my $cfpath = "$CFG->{paths}{templates}$fpath";
                 last HANDLE unless -f $cfpath;
 
-                $c->send_file_response($cfpath);
+                send_file_response($c,$cfpath);
                 $c->close;
                 next RUN_REQUESTS;
             };
@@ -140,6 +140,45 @@ sub json_response {
     $r->content($json_buf."\n");
 #    warn $json_buf."\n";
     return $r;
+}
+
+sub send_file_response {
+# --------------------------------------------------
+    my($daemon, $file) = @_;
+    my $CRLF = "\015\012";   # "\r\n" is not portable
+    if (-d $file) {
+        $daemon->send_dir($file);
+    }
+    elsif (-f _) {
+        # plain file
+        local(*F);
+        sysopen(F, $file, 0) or 
+        return $daemon->send_error(RC_FORBIDDEN);
+        binmode(F);
+        require LWP::MediaTypes;
+        my($ct,$ce) = LWP::MediaTypes::guess_media_type($file);
+
+        if ( $ct eq 'text/plain' ) {
+            if ( $file =~ /\.css$/ ) {
+                $ct = 'text/css';
+            }
+        }
+        my($size,$mtime) = (stat _)[7,9];
+        unless ($daemon->antique_client) {
+            $daemon->send_basic_header;
+            print $daemon "Content-Type: $ct$CRLF";
+            print $daemon "Content-Encoding: $ce$CRLF" if $ce;
+            print $daemon "Content-Length: $size$CRLF" if $size;
+            require HTTP::Date;
+            print $daemon "Last-Modified: ", HTTP::Date::time2str($mtime), "$CRLF" if $mtime;
+            print $daemon $CRLF;
+        }
+        $daemon->send_file(\*F) unless $daemon->head_request;
+        return RC_OK;
+    }
+    else {
+        $daemon->send_error(RC_NOT_FOUND);
+    }
 }
 
 __END__
