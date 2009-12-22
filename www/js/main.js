@@ -2,24 +2,52 @@ var gps_marker = null;
 
 var map        = null;
 
-var route_menu_lookup = {};
-var menu_proto = [ 
-    null, // used to show what the location is
-    $.contextMenu.separator, 
-    { 'Get Directions':       menuaction_directions_here },
-    { 'Save Directions':      menuaction_directions_here },
-    { 'Load Directions':      menuaction_directions_load },
-    { 'Directions from here': menuaction_directions_here },
-    { 'Directions to here':   menuaction_directions_here },
-    { 'Place Waypoint':       menuaction_place_waypoint  } 
-  ]; 
-
-
 var tics_last  = 0;
 var tics_start = new Date();
 
 var tics_status_poll = 1000;
-var poll_pause       = 0;
+var gps_poll_pause   = 1; // start off with the gps not running
+var gps_follow       = 1;
+
+var route_menu_lookup = {};
+
+var menu_proto = [ 
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
+      var opt={}; opt[latlon_str] = function(menuItem,menu) {  
+        window.prompt(
+            "Location Coordinates (longitude,latitude)",
+            latlon.lng()+","+latlon.lat()
+        )
+      }; return opt; },
+
+    $.contextMenu.separator, 
+
+    { 'Search':               menuaction_directions_search },
+
+    { 'Get Directions':       menuaction_directions_here },
+    { 'Save Directions':      menuaction_directions_here },
+    { 'Load Directions':      menuaction_directions_load },
+    { 'Directions from here': menuaction_directions_here },
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
+      var opt={}; opt['Use GPS'] = {
+          onclick: function () { gps_poll_pause = !gps_poll_pause; },
+          icon: ( gps_poll_pause ? "css/images/cross.png" : "css/images/accept.png" )
+      }; return opt; },
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
+      var opt={}; opt['Follow GPS'] = {
+          onclick: function () { gps_follow = !gps_follow; },
+          icon: ( gps_follow ? "css/images/accept.png" : "css/images/cross.png" )
+      }; return opt; },
+
+    { 'Directions to here':   menuaction_directions_here },
+    { 'Place Waypoint':       menuaction_place_waypoint  } 
+  ]; 
 
 /***************************************************
  * INITIALIZATION
@@ -36,6 +64,7 @@ $(function(){
     $('#dialog').dialog({
         autoOpen: false,
         width: 600,
+        modal: true,
         buttons: {
             "Ok": function() {
                 $(this).dialog("close");
@@ -85,6 +114,18 @@ function contextmenu_event_show (cmenu,t,e) {
   var latlon_str   = sprintf( "%.05f,%.05f", latlon.lng(), latlon.lat() );
   var option_first = {};
 
+  var menu_items = [];
+  for ( var i in menu_proto ) {
+    var menu_item = menu_proto[i];
+    if ( 'function' == typeof menu_item ) {
+      menu_item = menu_item(pixel,latlon,latlon_str);
+    }
+    if ( !menu_item ) continue;
+    menu_items.push(menu_item);
+  }
+  
+  return menu_items;
+
 // Add the base options in
   option_first[latlon_str] = function(menuItem,menu) {  
     window.prompt(
@@ -126,7 +167,7 @@ function gps_status_poll () {
     var now  = new Date();
 
 // Should only be used while the streetview is updating to a new location
-    if ( poll_pause ) {
+    if ( gps_poll_pause ) {
         return;
     };
 
@@ -155,15 +196,40 @@ function gps_status_poll () {
             else {
                 gps_marker.setLatLng(new_position);
             }
+            if (gps_follow) {
+              map.setCenter(new_position);
+            }
             return;
         }
     );
 }
 
+/***************************************************
+ * DIALOG FUNCTIONS
+ ***************************************************/
 
-/*
- * Menu Functions
- */
+function dialog_load ( title, page ) {
+// --------------------------------------------------
+// Load the appropriate dialog into the space
+//
+  $('#dialog').load(
+                    page,
+                    null,
+                    function () {
+                      $('#dialog').dialog('option','title',title);
+                      $('#dialog').dialog('open');
+                    }
+               );
+}
+
+/***************************************************
+ * MENU FUNCTIONS
+ ***************************************************/
+
+function menuaction_directions_search (menu_item,menu) {
+// --------------------------------------------------
+    dialog_load('Location Search','dialog-search.html');
+}
 
 function menuaction_directions_load (menu_item,menu) {
 // --------------------------------------------------
@@ -189,7 +255,6 @@ function debug_log ( msg ) {
         $('#debug').val( $('#debug').val() + msg + "\n" );
     }
 }
-
 
 function debug_logcl ( msg ) {
 // --------------------------------------------------

@@ -13,7 +13,7 @@ use Time::HiRes qw/ time /;
 use constant{
         PI => 3.14156
     };
-use vars qw/ $CFG $SHARED @PACE_TICS /;
+use vars qw/ $CFG $SHARED /;
 
 $CFG = {
     paths => {
@@ -51,7 +51,6 @@ sub init {
         device_state => '',
     };
     @$SHARED{keys %$init_shared} = values %$init_shared;
-    share(@PACE_TICS);
 };
 
 sub gps {
