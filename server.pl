@@ -14,6 +14,7 @@ use constant{
         PI => 3.14156
     };
 use vars qw/ $CFG $SHARED /;
+$|++;
 
 $CFG = {
     paths => {
@@ -33,13 +34,6 @@ sub main {
 # the main webserver sits on the update loop
 #
     init();
-
-
-# Create the thread that keeps track of how fast the 
-# bike tire is spinning
-    threads->create('gps');
-
-# Main loop
     webserver();
 }
 
@@ -58,6 +52,7 @@ sub gps {
 # This connects to the GPS and allows us to keep sending
 # updates to the client app
 #
+    $SIG{KILL} = sub { threads->exit() };
     print "Connecting...\n";
 
 # Figure out which serial port we're trying to use...
@@ -69,12 +64,14 @@ sub gps {
     $comm_port_fpath or die "No comm ports found!";
 
 # Then let's create the object that will handle our data
-    my $device = GPS::MTK->connect( comm_port_fpath => $comm_port_fpath );
-
+    my $device = GPS::MTK->connect( 
+                        comm_port_fpath => $comm_port_fpath,
+                        probe_skip      => 1,
+                    );
     print "Connected!\n";
 
-    $device->blocking(1);
     while (1) {
+        $device->blocking(1);
         if ( $device->loop ) {
             my $state = $device->gps_state;
             $SHARED->{device_state} = JSON::to_json($state);
@@ -86,6 +83,8 @@ sub gps {
 sub webserver {
 # --------------------------------------------------
     my $d = HTTP::Daemon->new(LocalAddr => 'localhost') || die;
+    my $gps_thread;
+
     print "Please contact me at: <URL:", $d->url, ">\n";
     while (my $c = $d->accept) {
         RUN_REQUESTS: while (my $r = $c->get_request) {
@@ -95,16 +94,31 @@ sub webserver {
 # request?
                 my $fpath = $r->url->path || '/'.$CFG->{webserver}{index};
 
-warn "Request: $fpath\n";
+                print "Request: $fpath\n";
+
 # Particular paths bring about particular functions... this one 
 # will report back the current orientation of the HMD so that the user
 # can "look around" the space.
                 if ( $fpath eq '/gps_state.json' ) {
+
                     my $r = HTTP::Response->new(200);
                     $r->header('Content-type','application/json');
-                    $r->content($SHARED->{device_state}."\n");
+                    $r->content($SHARED->{device_state}||'{}');
                     $c->send_response($r);
                     $c->close;
+
+# Create the thread that keeps track of how fast the 
+# bike tire is spinning
+                    $gps_thread ||= threads->create('gps');
+
+                    next RUN_REQUESTS;
+                }
+
+                elsif ( $fpath eq '/gps_restart.json' ) {
+                    $c->send_response(json_response({}));
+                    $c->close;
+                    $gps_thread and $gps_thread->kill('SIGKILL')->detach;
+                    $gps_thread = threads->create('gps');
                     next RUN_REQUESTS;
                 }
 
@@ -162,13 +176,14 @@ sub send_file_response {
                 $ct = 'text/css';
             }
         }
+
         my($size,$mtime) = (stat _)[7,9];
+        require HTTP::Date;
         unless ($daemon->antique_client) {
             $daemon->send_basic_header;
             print $daemon "Content-Type: $ct$CRLF";
             print $daemon "Content-Encoding: $ce$CRLF" if $ce;
             print $daemon "Content-Length: $size$CRLF" if $size;
-            require HTTP::Date;
             print $daemon "Last-Modified: ", HTTP::Date::time2str($mtime), "$CRLF" if $mtime;
             print $daemon $CRLF;
         }

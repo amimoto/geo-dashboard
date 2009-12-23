@@ -1,7 +1,45 @@
+<script>
+/*****************************************************************
+ ** When a user posts an entry to the server, we want to search
+ ** Google for any possible matches
+ *****************************************************************/
+var geocoder = new GClientGeocoder();
 
-<div>
-  Query <input type="text" style="border: solid 1px black;width:400px;margin-left:10px" />
-<div>
+function query_google ( search_location ) {
+// --------------------------------------------------
+    geocoder.getLatLng( 
+      search_location, 
+      function(point){ query_loaded(point,search_location) }
+    );
+    return false;
+}
+
+function query_loaded ( point, search_location ) {
+// --------------------------------------------------
+  point = new GLatLng( point.lat(), point.lng() );
+
+// Put a small marker over the point found
+  var marker = new GMarker(point);
+  map.addOverlay(marker);
+  marker.openInfoWindowHtml(search_location);
+
+// Move the map
+  map.setCenter(point, 14);
+
+// Get rid of the dialog screen
+  $('#dialog').dialog('close');
+
+  return false;
+
+}
+
+</script>
+
+<form id="dialog-form" action="" method="post" onsubmit="return query_google($(this).find('input[name=q]').val())">
+  <div>
+    Query <input type="text" name="q" style="border: solid 1px black;width:400px;margin-left:10px" />
+  <div>
+</form>
 
 <div>
   <h3>Did you mean...</h3>

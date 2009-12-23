@@ -40,6 +40,13 @@ var menu_proto = [
 
 // --------------------------------------------------
     function (pixel,latlon,latlon_str) {
+      if ( gps_poll_pause ) return;
+      var opt={}; opt['Reset GPS'] = {
+          onclick: function () { jQuery.getJSON( '/gps_restart.json', {}, function () {}) },
+      }; return opt; },
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
       var opt={}; opt['Follow GPS'] = {
           onclick: function () { gps_follow = !gps_follow; },
           icon: ( gps_follow ? "css/images/accept.png" : "css/images/cross.png" )
@@ -188,7 +195,12 @@ function gps_status_poll () {
         // Receive the current status of the HMD and distance
         // travelled on the bike.
         //
+            if ( isNaN(data.lat) || isNaN(data.lon) ) {
+                return;
+            }
+
             var new_position = new GLatLng( data.lat, data.lon );
+
             if ( !gps_marker ) {
                 gps_marker = new GMarker(new_position);
                 map.addOverlay(gps_marker);
@@ -196,6 +208,7 @@ function gps_status_poll () {
             else {
                 gps_marker.setLatLng(new_position);
             }
+
             if (gps_follow) {
               map.setCenter(new_position);
             }
