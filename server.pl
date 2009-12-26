@@ -23,6 +23,11 @@ $CFG = {
     webserver => {
         index => 'index2.html',
     },
+    database => {
+        db_fpath => 'dashboard.sqlite',
+        user_db_fname => 'userdb_%s.sqlite',
+        db_path  => 'var/data',
+    },
 };
 
 main();
@@ -84,8 +89,8 @@ sub webserver {
 # --------------------------------------------------
     my $d = HTTP::Daemon->new(LocalAddr => 'localhost') || die;
     my $gps_thread;
-
-    print "Please contact me at: <URL:", $d->url, ">\n";
+Geo::Dashboard::DB::db();
+    print "Please contact me at: ", $d->url, "\n";
     while (my $c = $d->accept) {
         RUN_REQUESTS: while (my $r = $c->get_request) {
             HANDLE: {
@@ -125,11 +130,48 @@ sub webserver {
 # If we can't find a special function we'll see if there is a template
 # tile that matches the request
                 $fpath eq '/' and $fpath = "/$CFG->{webserver}{index}";
+                $fpath =~ s/\.\.+|\/\/+//g; # no ".." and double slashes allowed!
                 my $cfpath = "$CFG->{paths}{templates}$fpath";
                 last HANDLE unless -f $cfpath;
 
-                send_file_response($c,$cfpath);
-                $c->close;
+# Do we want to run a special CGI like action?
+                if ( $cfpath =~ /\.json$/ ) {
+                    eval {
+
+# Load up the request handling object
+                        do $cfpath;
+
+# Create the appropriate CGI object based upon the
+# request method type.
+                        my $method = $r->method;
+                        my $cgi;
+                        require CGI;
+                        if ( 'GET' eq uc $method ) {
+                            $cgi = CGI->new($r->url->query);
+                        }
+                        elsif ( 'POST' eq uc $method ) {
+                            $cgi = CGI->new($r->content);
+                        }
+
+# Execute and handle the IO
+                        if ( my $struct = Response::run($cgi,$SHARED,$r,$c) ) {
+                            $c->send_response(json_response($struct));
+                            $c->close;
+                        }
+                        1;
+
+# This gets called if there is some sort of exception that occurs
+                    } or do {
+                        $c->send_response(json_response({error=>"$@"}));
+                        $c->close;
+                    };
+                }
+
+# No, we'll just throw them the file
+                else {
+                    send_file_response($c,$cfpath);
+                    $c->close;
+                }
                 next RUN_REQUESTS;
             };
 
@@ -194,6 +236,25 @@ sub send_file_response {
         $daemon->send_error(RC_NOT_FOUND);
     }
 }
+
+package Dashboard;
+use strict;
+
+sub init {
+# --------------------------------------------------
+}
+
+sub user_login {
+# --------------------------------------------------
+    my ( $args ) = @_;
+}
+
+sub user_logout {
+# --------------------------------------------------
+    my ( $args ) = @_;
+}
+
+1;
 
 __END__
 
@@ -290,3 +351,4 @@ __END__
   'sats' => '03',
   'units' => 'M'
 };
+
