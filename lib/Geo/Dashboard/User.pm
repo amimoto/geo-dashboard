@@ -1,5 +1,6 @@
 package Geo::Dashboard::User;
 
+use strict;
 use Geo::Dashboard;
 use Geo::Dashboard::DB;
 
@@ -140,7 +141,7 @@ sub session_get {
     my $sess_data = JSON::from_json( $sess->{ses_data} );
     my $sess_info = {%$sess};
     $sess_info->{ses_data} = $sess_data;
-    return $ses_info;
+    return $sess_info;
 }
 
 sub session_allocate {
@@ -164,8 +165,8 @@ sub session_allocate {
     my $ses_ins = $db->prepare(q`
                 insert into geod_sessions 
                     (ses_key,ses_created_tics,ses_expires,ses_data) 
-                values (?,?,?,?)`);
-    $ses_ins->execute($sess_key,time,time+60*60,$ses_data);
+                values (?,?,?,?)`) or die $DBI::errstr;
+    $ses_ins->execute($sess_key,time,time+60*60,$ses_data) or die $DBI::errstr;
 
     return $pkg->session_get({sess_key=>$sess_key});
 }

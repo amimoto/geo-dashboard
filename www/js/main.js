@@ -11,6 +11,9 @@ var gps_follow       = 1;
 
 var route_menu_lookup = {};
 
+var session;
+var user_info;
+
 var menu_proto = [ 
 
 // --------------------------------------------------

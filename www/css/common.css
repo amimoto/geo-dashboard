@@ -46,3 +46,30 @@ ul {
  {
   margin: 0px 0px 0px 40px;
 }
+
+
+.form-dialog {
+  width: 400px;
+  position: relative;
+  margin:auto auto; 
+}
+
+.form-dialog .form-row {
+  clear: both;
+  position: relative;
+  margin: 2px 0px 2px 0px;
+}
+
+.form-dialog .form-row label {
+  position: absolute;
+  font-weight: bold;
+  float: left;
+}
+
+.form-dialog .form-row input,
+.form-dialog .form-row select 
+ {
+  margin: 0px 0px 0px 100px;
+  border: solid 1px #999999;
+  width: 200px;
+}
