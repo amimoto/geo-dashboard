@@ -1,0 +1,25 @@
+<script>
+/*****************************************************************
+ ** To gain access to stored routes and waypoints, a user must
+ ** identify themselves to the server. We'll handle that here.
+ *****************************************************************/
+
+function geod_login ( form ) {
+// --------------------------------------------------
+    alert("hi!");
+    return false;
+}
+
+</script>
+
+<form id="dialog-form" action="" method="post" onsubmit="return geod_login(this)" style="width: 300px;margin:auto auto">
+  <div>
+    <label>Username</label>
+    <input type="text" name="usr_login" style="border: solid 1px black;width:200px;margin-left:10px" />
+  </div>
+  <div>
+    <label>Password</label>
+    <input type="password" name="usr_pass" style="border: solid 1px black;width:200px;margin-left:10px" />
+  </div>
+</form>
+

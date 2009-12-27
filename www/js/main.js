@@ -53,7 +53,14 @@ var menu_proto = [
       }; return opt; },
 
     { 'Directions to here':   menuaction_directions_here },
-    { 'Place Waypoint':       menuaction_place_waypoint  } 
+    { 'Place Waypoint':       menuaction_place_waypoint  },
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
+      var opt={}; opt['Login'] = {
+          onclick: function () { menuaction_login() }
+      }; return opt; }
+
   ]; 
 
 /***************************************************
@@ -74,7 +81,10 @@ $(function(){
         modal: true,
         buttons: {
             "Ok": function() {
-                $(this).dialog("close");
+                var onsubmit = $(this).find('form').attr('onsubmit');
+                var onsubmit_func = new Function(onsubmit);
+                $(this).find('form').removeAttr('onsubmit').submit(onsubmit_func).trigger('submit');
+                return false;
             },
             "Cancel": function() {
                 $(this).dialog("close");
@@ -238,6 +248,16 @@ function dialog_load ( title, page ) {
 /***************************************************
  * MENU FUNCTIONS
  ***************************************************/
+
+function menuaction_login () {
+// --------------------------------------------------
+    dialog_load('Login','dialog-login.html');
+}
+
+function menuaction_logout () {
+// --------------------------------------------------
+    dialog_load('Logout','dialog-logout.html');
+}
 
 function menuaction_directions_search (menu_item,menu) {
 // --------------------------------------------------

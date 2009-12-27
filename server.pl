@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 use strict;
+use lib 'lib';
 use lib '../gps-mtk/lib';
 use threads;
 use threads::shared;
@@ -9,6 +10,7 @@ use HTTP::Daemon;
 use HTTP::Status;
 use GPS::MTK::Constants qw/:commands/;
 use GPS::MTK;
+use Geo::Dashboard;
 use Time::HiRes qw/ time /;
 use constant{
         PI => 3.14156
@@ -46,6 +48,7 @@ sub init {
 # --------------------------------------------------
     $SHARED = {};
     share($SHARED);
+    Geo::Dashboard->init;
     my $init_shared = {
         device_state => '',
     };
@@ -89,7 +92,6 @@ sub webserver {
 # --------------------------------------------------
     my $d = HTTP::Daemon->new(LocalAddr => 'localhost') || die;
     my $gps_thread;
-Geo::Dashboard::DB::db();
     print "Please contact me at: ", $d->url, "\n";
     while (my $c = $d->accept) {
         RUN_REQUESTS: while (my $r = $c->get_request) {
