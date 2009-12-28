@@ -29,13 +29,19 @@ var menu_proto = [
 
     { 
       'Search': {
-        onclick: menuaction_directions_search,
+        onclick: menuaction_search,
         icon: "css/images/icon-search.png"
       }
     },
+
     { 'Directions from here': menuaction_directions_here },
     { 'Directions to here':   menuaction_directions_here },
-    { 'Get Directions':       menuaction_directions_here },
+    { 
+      'Get Directions': {
+        onclick: menuaction_directions,
+        icon: "css/images/icon-direction-search.png"
+      }
+    },
 
 // --------------------------------------------------
     function (pixel,latlon,latlon_str) {
@@ -69,6 +75,7 @@ var menu_proto = [
 
 // --------------------------------------------------
     function (pixel,latlon,latlon_str) {
+      if ( gps_poll_pause ) return;
       var opt={}; opt['Follow GPS'] = {
           onclick: function () { gps_follow = !gps_follow; },
           icon: ( gps_follow ? "css/images/accept.png" : "css/images/cross.png" )
@@ -294,14 +301,19 @@ function menuaction_login () {
     dialog_load('Login','dialog-login.html');
 }
 
+function menuaction_search () {
+// --------------------------------------------------
+    dialog_load('Login','dialog-search.html');
+}
+
 function menuaction_logout () {
 // --------------------------------------------------
     dialog_load('Logout','dialog-logout.html');
 }
 
-function menuaction_directions_search (menu_item,menu) {
+function menuaction_directions (menu_item,menu) {
 // --------------------------------------------------
-    dialog_load('Location Search','dialog-search.html');
+    dialog_load('Location Search','dialog-directions.html');
 }
 
 function menuaction_directions_load (menu_item,menu) {

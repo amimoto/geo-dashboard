@@ -1,0 +1,37 @@
+<script>
+/*****************************************************************
+ ** When a user is attempting to find directions from point A
+ ** to point B :)
+ *****************************************************************/
+
+function geod_directions (form) {
+// --------------------------------------------------
+}
+
+</script>
+
+
+
+<form id="dialog-form" class="form-dialog" action="login.json" method="post" onsubmit="return geod_directions(this)" style="">
+
+  <div class="ui-widget" id="dialog-error" style="display:none" >
+    <div class="ui-state-error ui-corner-all"> 
+      <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span> 
+      <strong>Alert:</strong> <span id="dialog-error-message">ERROR!</a></p> 
+    </div> 
+  </div> 
+
+  <div class="form-row">
+    <label>From</label>
+    <input type="text" name="from" />
+    <a href=""><img src="css/images/icon-direction-waypoint-add.png" alt=""/></a>
+  </div>
+
+  <div class="form-row">
+    <label>To</label>
+    <input type="password" name="to" />
+  </div>
+
+</form>
+
+
