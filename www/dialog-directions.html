@@ -8,6 +8,40 @@ function geod_directions (form) {
 // --------------------------------------------------
 }
 
+function geod_direction_waypoint_add (href) {
+// --------------------------------------------------
+  $(href).parents('.direction-row').after(
+    '<tr class="direction-row">'
+    + $('.direction-row-template').html()
+    + '</tr>'
+  );
+  geod_direction_list_dnd();
+  return false;
+}
+
+function geod_direction_waypoint_remove (href) {
+// --------------------------------------------------
+  if ( $(".direction-row").size() <= 2 ) return;
+  $(href).parents('.direction-row').remove();
+  geod_direction_list_dnd();
+  return false;
+}
+
+function geod_direction_list_dnd () {
+// --------------------------------------------------
+  $(".direction-row .label").html("To");
+  $(".direction-row .label:first").html("From");
+  $("#direction-list").tableDnD({
+    onDrop: geod_direction_list_dnd
+  });
+}
+
+$(function(){
+  for (i=1;i<=2;i++)
+    $("#direction-list").append( '<tr class="direction-row">' + $('.direction-row-template').html() + '</tr>' );
+  geod_direction_list_dnd();
+});
+
 </script>
 
 
@@ -21,6 +55,20 @@ function geod_directions (form) {
     </div> 
   </div> 
 
+<table id="direction-list">
+
+  <tr class="direction-row-template" style="display:none">
+    <td class="label">To</td>
+    <td>
+      <input type="text" name="to" />
+      <a href="#" onclick="return geod_direction_waypoint_add(this)"><img src="css/images/icon-direction-waypoint-add.png" alt=""/></a>
+      <a href="#" onclick="return geod_direction_waypoint_remove(this)"><img src="css/images/icon-direction-waypoint-delete.png" alt=""/></a>
+    </td>
+  </tr>
+
+</table>
+
+<!--
   <div class="form-row">
     <label>From</label>
     <input type="text" name="from" />
@@ -31,6 +79,7 @@ function geod_directions (form) {
     <label>To</label>
     <input type="password" name="to" />
   </div>
+-->
 
 </form>
 
