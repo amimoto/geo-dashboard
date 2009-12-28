@@ -28,11 +28,25 @@ var menu_proto = [
     $.contextMenu.separator, 
 
     { 'Search':               menuaction_directions_search },
-
-    { 'Get Directions':       menuaction_directions_here },
-    { 'Save Directions':      menuaction_directions_here },
-    { 'Load Directions':      menuaction_directions_load },
     { 'Directions from here': menuaction_directions_here },
+    { 'Directions to here':   menuaction_directions_here },
+    { 'Get Directions':       menuaction_directions_here },
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
+      if (!session) return;
+      var opt={}; opt['Save Directions'] = {
+          onclick: function () { gps_poll_pause = !gps_poll_pause; },
+          icon: ( gps_poll_pause ? "css/images/cross.png" : "css/images/accept.png" )
+      }; return opt; },
+
+// --------------------------------------------------
+    function (pixel,latlon,latlon_str) {
+      if (!session) return;
+      var opt={}; opt['Load Directions'] = {
+          onclick: function () { gps_poll_pause = !gps_poll_pause; },
+          icon: ( gps_poll_pause ? "css/images/cross.png" : "css/images/accept.png" )
+      }; return opt; },
 
 // --------------------------------------------------
     function (pixel,latlon,latlon_str) {
@@ -55,7 +69,6 @@ var menu_proto = [
           icon: ( gps_follow ? "css/images/accept.png" : "css/images/cross.png" )
       }; return opt; },
 
-    { 'Directions to here':   menuaction_directions_here },
     { 'Place Waypoint':       menuaction_place_waypoint  },
 
 // --------------------------------------------------

@@ -10,7 +10,7 @@ function geod_login ( form ) {
       dataType: "json",
       success: function (data) {
         if ( data.sess ) {
-            session = data.sess;
+            session   = data.sess;
             user_info = data.user;
             $('#dialog').dialog('close');
         }
