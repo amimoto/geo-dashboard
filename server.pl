@@ -90,7 +90,8 @@ sub gps {
 
 sub webserver {
 # --------------------------------------------------
-    my $d = HTTP::Daemon->new(LocalAddr => '192.168.1.100') || die;
+#    my $d = HTTP::Daemon->new(LocalAddr => '192.168.1.100') || die;
+    my $d = HTTP::Daemon->new(LocalAddr => 'localhost') || die;
     my $gps_thread;
     print "Please contact me at: ", $d->url, "\n";
     while (my $c = $d->accept) {

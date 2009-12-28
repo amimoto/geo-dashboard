@@ -361,7 +361,7 @@ function polyline_handle ( opts ) {
         var point_prev        = map.fromLatLngToContainerPixel(polyline.getVertex(0));
         for ( var i=1; i < polyline_vertices; i++ ) {
             var point_cur = map.fromLatLngToContainerPixel(polyline.getVertex(i));
-            var point_median = edge_click_within( point_prev, point_cur, point, 10 );
+            var point_median = me.edge_click_within( point_prev, point_cur, point, 10 );
             if ( point_median ) {
                 return {
                   "point": point_median,
