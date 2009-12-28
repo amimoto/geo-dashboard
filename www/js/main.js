@@ -27,7 +27,12 @@ var menu_proto = [
 
     $.contextMenu.separator, 
 
-    { 'Search':               menuaction_directions_search },
+    { 
+      'Search': {
+        onclick: menuaction_directions_search,
+        icon: "css/images/icon-search.png"
+      }
+    },
     { 'Directions from here': menuaction_directions_here },
     { 'Directions to here':   menuaction_directions_here },
     { 'Get Directions':       menuaction_directions_here },
@@ -37,7 +42,7 @@ var menu_proto = [
       if (!session) return;
       var opt={}; opt['Save Directions'] = {
           onclick: function () { gps_poll_pause = !gps_poll_pause; },
-          icon: ( gps_poll_pause ? "css/images/cross.png" : "css/images/accept.png" )
+          icon: "css/images/icon-save.png"
       }; return opt; },
 
 // --------------------------------------------------
@@ -45,7 +50,7 @@ var menu_proto = [
       if (!session) return;
       var opt={}; opt['Load Directions'] = {
           onclick: function () { gps_poll_pause = !gps_poll_pause; },
-          icon: ( gps_poll_pause ? "css/images/cross.png" : "css/images/accept.png" )
+          icon: "css/images/icon-open.png"
       }; return opt; },
 
 // --------------------------------------------------
@@ -69,13 +74,32 @@ var menu_proto = [
           icon: ( gps_follow ? "css/images/accept.png" : "css/images/cross.png" )
       }; return opt; },
 
-    { 'Place Waypoint':       menuaction_place_waypoint  },
+    { 
+      'Place Waypoint': {
+        onclick: menuaction_place_waypoint,
+        icon: "css/images/icon-place-waypoint.png"
+      }
+    },
 
 // --------------------------------------------------
+// HANDLE LOGIN/LOGOUT
+//
     function (pixel,latlon,latlon_str) {
-      var opt={}; opt['Login'] = {
-          onclick: function () { menuaction_login() }
-      }; return opt; }
+      var opt={}; 
+      if (session) {
+        opt['Logout'] = { 
+          onclick: function () { menuaction_logout() },
+          icon: "css/images/icon-logout.png"
+        }
+      }
+      else {
+        opt['Login'] = { 
+          onclick: function () { menuaction_login() },
+          icon: "css/images/icon-login.png"
+        }
+      };
+      return opt;
+    }
 
   ]; 
 
