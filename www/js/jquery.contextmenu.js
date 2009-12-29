@@ -258,7 +258,13 @@
 	$.fn.contextMenu = function(menu,options) {
 		var cmenu = $.contextMenu.create(menu,options);
 		return this.each(function(){
-			$(this).bind('contextmenu',function(e){cmenu.show(this,e);return false;});
+			$(this).bind(
+                'contextmenu',
+                function(e){
+                    cmenu.show(this,e);
+                    return false;
+                }
+            );
 		});
 	};
 })(jQuery);

@@ -14,9 +14,17 @@ var route_menu_lookup = {};
 var session;
 var user_info;
 
+/***********************************************************************
+ * This structure controls the context menu. Note that the context
+ * menu is recreated with every right click so we have the ability to 
+ * add/remove/modify elements however we wish.
+ **********************************************************************/
 var menu_proto = [ 
 
 // --------------------------------------------------
+// Locate where the user is on the map and show them the
+// latitude, longitude coodinates
+//
     function (pixel,latlon,latlon_str) {
       var opt={}; opt[latlon_str] = function(menuItem,menu) {  
         window.prompt(
@@ -44,6 +52,10 @@ var menu_proto = [
     },
 
 // --------------------------------------------------
+// This should only be shown when right-clicking on a
+// direction/route. This will allow the user to save this
+// route to their personal database for future recall
+//
     function (pixel,latlon,latlon_str) {
       if (!session) return;
       var opt={}; opt['Save Directions'] = {
@@ -52,6 +64,8 @@ var menu_proto = [
       }; return opt; },
 
 // --------------------------------------------------
+// Load a previously modified route into the database
+//
     function (pixel,latlon,latlon_str) {
       if (!session) return;
       var opt={}; opt['Load Directions'] = {
@@ -60,6 +74,9 @@ var menu_proto = [
       }; return opt; },
 
 // --------------------------------------------------
+// Request the service to start using the GPS to get location
+// updates that will place the user on the map
+//
     function (pixel,latlon,latlon_str) {
       var opt={}; opt['Use GPS'] = {
           onclick: function () { gps_poll_pause = !gps_poll_pause; },
@@ -67,6 +84,9 @@ var menu_proto = [
       }; return opt; },
 
 // --------------------------------------------------
+// Sometimes, the connection to the GPS will fail. Here,
+// we can ask the system to renegotiate the connection
+//
     function (pixel,latlon,latlon_str) {
       if ( gps_poll_pause ) return;
       var opt={}; opt['Reset GPS'] = {
@@ -74,6 +94,10 @@ var menu_proto = [
       }; return opt; },
 
 // --------------------------------------------------
+// Do we want the map to center on the GPS? With this
+// turned on, the map will recenter on the GPS' location
+// with every update
+//
     function (pixel,latlon,latlon_str) {
       if ( gps_poll_pause ) return;
       var opt={}; opt['Follow GPS'] = {
@@ -111,15 +135,17 @@ var menu_proto = [
   ]; 
 
 /***************************************************
+ ***************************************************
  * INITIALIZATION
+ ***************************************************
  ***************************************************/
 $(function(){
 
 // JQuery UI settings
-  $('#map_canvas').contextMenu(
-    contextmenu_event_show,
-    {theme:'vista'}
-  );
+//  $('#map_canvas').contextMenu(
+//    contextmenu_event_show,
+//    {theme:'vista'}
+//  );
 
 // JQuery UI Dialog
     $('#dialog').dialog({
@@ -142,6 +168,14 @@ $(function(){
 // Setup the GMap interface
   if (GBrowserIsCompatible()) {
     map        = new GMap2(document.getElementById("map_canvas"));
+
+// Bind the right click to something useful
+    GEvent.addListener(map,"singlerightclick",function(point,src,overlay){ 
+		var cmenu = $.contextMenu.create(contextmenu_event_show,{theme:"vista"});
+        point.pageX = point.x;
+        point.pageY = point.y;
+        cmenu.show($('#map_canvas'),point);
+    });
 
 // Create a map and let's try and center it...
     map.setCenter(
@@ -199,23 +233,6 @@ function contextmenu_event_show (cmenu,t,e) {
   };
   menu_proto[0] = option_first;
   var menu_full = menu_proto.slice();
-
-// If the user has right clicked while on a route, let's add that in too
-  var routes_hovered = 0;
-  for (i in route_menu_lookup ) {
-
-// Add a separator if it's the first entry
-    if ( routes_hovered == 0 )
-      menu_full.push($.contextMenu.separator);
-
-// Add a menu item
-    var route_info = route_menu_lookup[i];
-    var menu_new = {};
-    menu_new[route_info.query] = function(){};
-    menu_full.push(menu_new);
-
-    routes_hovered++;
-  }
 
   return menu_full;
 }
