@@ -9,6 +9,7 @@ var tics_status_poll = 1000;
 var gps_poll_pause   = 1; // start off with the gps not running
 var gps_follow       = 1;
 
+var route_stack       = [];
 var route_menu_lookup = {};
 
 var session;
@@ -42,14 +43,14 @@ var menu_proto = [
       }
     },
 
-    { 'Directions from here': menuaction_directions_here },
-    { 'Directions to here':   menuaction_directions_here },
     { 
       'Get Directions': {
         onclick: menuaction_directions,
         icon: "css/images/icon-direction-search.png"
       }
     },
+    { 'Directions from here': menuaction_directions_here },
+    { 'Directions to here':   menuaction_directions_here },
 
 // --------------------------------------------------
 // This should only be shown when right-clicking on a
@@ -171,6 +172,12 @@ $(function(){
 
 // Bind the right click to something useful
     GEvent.addListener(map,"singlerightclick",function(point,src,overlay){ 
+
+// Account for when we're floating over something        
+        if ( under_mouse.length > 0 ) {
+            console.log("we have something under us!");
+        }
+
 		var cmenu = $.contextMenu.create(contextmenu_event_show,{theme:"vista"});
         point.pageX = point.x;
         point.pageY = point.y;
@@ -178,11 +185,9 @@ $(function(){
     });
 
 // Create a map and let's try and center it...
-    map.setCenter(
-        new GLatLng(CFG["defaults"]["map_center"][0],
-                    CFG["defaults"]["map_center"][1]),
-                    CFG["defaults"]["map_zoom"]
-    );
+    var map_center = new GLatLng(CFG["defaults"]["map_center"][0],
+                                 CFG["defaults"]["map_center"][1]);
+    map.setCenter(map_center,CFG["defaults"]["map_zoom"]);
     map.setUIToDefault();
     window_event_resize();
     window.onresize = window_event_resize;
@@ -192,12 +197,24 @@ $(function(){
     $(".draggable").draggable();
     $("#accordion").accordion({ header: "h3", autoHeight: false });
 
+// TESTING!
+    var my_marker = new map_marker(
+        map_center,
+        {
+            map:map,
+            show:1,
+            ev_click: function() {
+                alert("hello")
+            }
+        }
+    );
+
 // Setup the GPS position poll
     $().everyTime( tics_status_poll, gps_status_poll );
 });
 
 /***************************************************
- * PERIODIC EVENTS
+ * EVENTS
  ***************************************************/
 function window_event_resize () {
 // --------------------------------------------------

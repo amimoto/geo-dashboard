@@ -1,4 +1,58 @@
 /***********************************************************************
+ * Useful layer stack
+ ***********************************************************************/
+ var under_mouse = [];
+
+/***********************************************************************
+ * map_marker OBJECT
+ ***********************************************************************/
+function map_marker (position,opts) {
+/* --------------------------------------------------
+ * This object handles a single Google Maps marker
+ */ 
+
+    this.map      = opts["map"];
+    this.position = position;
+    this.marker   = new GMarker(position,opts["marker_opts"]);
+    var me = this;
+
+// Return the overlay object that can be used with map.addOverlay
+    this.overlay = function () {
+        return me.marker;
+    };
+
+// Handle some basic events
+    var ev_list = ['click','dbleclick','mouseover','mouseout','mousedown','mouseup','dragstart','drag','dragend','remove'];
+    this.ev_list = ev_list;
+    for ( var i in ev_list ) {
+        var ev_name = ev_list[i];
+        var ev_func = opts["ev_"+ev_name];
+        if ( !ev_func ) continue;
+        this["event_"+ev_name+"_handler"] = GEvent.addListener(
+            this.marker,
+            ev_name,
+            ev_func
+        );
+    }
+
+// Add the marker to the map
+    this.show = function () {
+        me.map.addOverlay(me.marker);
+    };
+
+// And when removing the object
+    this.destroy = function () {
+    };
+
+// If we want to show the record right away...
+    if ( opts["show"] ) {
+        this.show();
+    }
+
+    return this;
+}
+
+/***********************************************************************
  * route_directions OBJECT
  ***********************************************************************/
 function route_directions ( opts ) {
@@ -7,15 +61,33 @@ function route_directions ( opts ) {
  */ 
 
     this.map              = opts["map"];
+    this.metadata         = opts["metadata"]   ? opts["metadata"]   : {};
     this.route_travelmode = opts["travelmode"] ? opts["travelmode"] : G_TRAVEL_MODE_DRIVING;
     this.route_waypoints  = opts["waypoints"]  ? opts["waypoints"]  : [];
     var directions        = new GDirections();
     this.route_directions = directions;
     this.route_selected   = 0;
     this.polyline         = null;
+    this.drag_marker_opts = opts["drag_marker_opts"];
     this.callback         = opts["callback"]   ? opts["callback"] 
                                                : function (obj) {};
     var me = this;
+
+// Handle some basic events
+    var ev_list = ['click','dbleclick','mouseover','mouseout','mousedown','mouseup','dragstart','drag','dragend','remove'];
+    this.ev_list = ev_list;
+    for ( var i in ev_list ) {
+        var ev_name = ev_list[i];
+        var ev_func = opts["ev_"+ev_name];
+        if ( !ev_func ) continue;
+        continue; // FIXME
+        if ( !ev_func ) continue;
+        this["event_"+ev_name+"_handler"] = GEvent.addListener(
+            this.marker,
+            ev_name,
+            ev_func
+        );
+    }
 
 // Execute searching of directions...
     this.search = function ( waypoints ) {
@@ -125,7 +197,6 @@ function route_directions ( opts ) {
 
     // Now perform the search again
         me.search();
-
     };
 
 // Load up google's directions and setup our hook
@@ -171,7 +242,6 @@ function route_directions ( opts ) {
             }
             me.marker_verticies = marker_verticies;
 
-
             debug_logcl();
             for (var i=0;i<geocodes.length;i++) {
                 var geocode = geocodes[i];
@@ -179,11 +249,21 @@ function route_directions ( opts ) {
                 debug_log( i + ":" + vertex + " -> " + geocode.address);
             };
 
+// Set things up so that when the drag marker floats over our object
+// we set it.
+            me.drag_marker_opts["ev_mouseover"] = function () {
+                under_mouse.push(me);
+            };
+            me.drag_marker_opts["ev_mouseout"] = function () {
+                under_mouse.pop();
+            };
+
 // Now we can go ahead and setup the standard polyline stuff
             me.polyline = new polyline_handle({
                                 map:        me.map,
                                 polyline:   polyline,
                                 draggable:  true,
+                                drag_marker_opts: me.drag_marker_opts,
                                 cb_dragend: function (latlon,polyline) { me.event_edgedragend(latlon,polyline) }
                             });
 
@@ -203,18 +283,19 @@ function polyline_handle ( opts ) {
  * some fun tricks
  */ 
 
-    this.map           = opts["map"];
+    this.map              = opts["map"];
     this.map_reposition   = true;
-    this.polyline      = opts["polyline"];
-    this.visible       = null;
-    this.draggable     = opts["draggable"]    ? opts["draggable"]    : null;
-    this.cb_dragstart  = opts["cb_polyline"]  ? opts["cb_polyline"]  : null;
-    this.cb_dragend    = opts["cb_dragend"]   ? opts["cb_dragend"]   : null;
-    this.cb_mousemove  = opts["cb_dragstart"] ? opts["cb_dragstart"] : null;
-    this.drag_marker   = null;
-    this.drag_edge     = null;
-    this.mouse_latlon  = null;
-    this.gicon         = new GIcon({
+    this.polyline         = opts["polyline"];
+    this.visible          = null;
+    this.draggable        = opts["draggable"]    ? opts["draggable"]    : null;
+    this.cb_dragstart     = opts["cb_polyline"]  ? opts["cb_polyline"]  : null;
+    this.cb_dragend       = opts["cb_dragend"]   ? opts["cb_dragend"]   : null;
+    this.cb_mousemove     = opts["cb_dragstart"] ? opts["cb_dragstart"] : null;
+    this.drag_marker_opts = opts["drag_marker_opts"];
+    this.drag_marker      = null;
+    this.drag_edge        = null;
+    this.mouse_latlon     = null;
+    this.gicon            = new GIcon({
                                   image:      "css/images/route-control-point.png",
                                   iconSize:   new GSize(16,16),
                                   iconAnchor: new GPoint(8,8)
@@ -309,36 +390,45 @@ function polyline_handle ( opts ) {
 
 // Only create the marker if we need to
           if ( me.drag_marker ) {
-            me.drag_marker.setLatLng(latlng_median);
+            me.drag_marker.marker.setLatLng(latlng_median);
           }
 // Marker doesn't exist. Let's initialize it
           else {
 
-            var marker = new GMarker( 
-              latlng_median, 
-              { icon: me.gicon, draggable: true } 
-            );
+            var map_marker_opts = {
+                marker_opts: {
+                    icon: me.gicon, 
+                    draggable: true
+                },
 
-// Add the tie point to the route
-            map.addOverlay(marker);
-            me.drag_marker = marker;
+                show: true,
+                map: me.map,
 
 // Setup the events that will allow us to drag the new node point
 // from one place to another. How exciting! :)
-            me.event_dragstart_handle = GEvent.addListener(marker, "dragstart", function() {
-              me.state_dragging = 1;
-              if ( me.cb_dragstart ) me.cb_dragstart(me.mouse_latlon,me);
-            });
-            me.event_dragend_handle = GEvent.addListener(marker, "dragend", function() {
-              me.state_dragging = null;
-              map.removeOverlay(me.drag_marker);
-              me.drag_marker = null;
-              if ( me.cb_dragend ) me.cb_dragend(me.mouse_latlon,me);
-            });
+                ev_dragstart: function () {
+                  me.state_dragging = 1;
+                  if ( me.cb_dragstart ) me.cb_dragstart(me.mouse_latlon,me);
+                },
+                ev_dragend: function () {
+                  me.state_dragging = null;
+                  map.removeOverlay(me.drag_marker.marker);
+                  me.drag_marker = null;
+                  if ( me.cb_dragend ) me.cb_dragend(me.mouse_latlon,me);
+                }
+            };
+            for ( var i in me.drag_marker_opts ) {
+                map_marker_opts[i] = me.drag_marker_opts[i];
+            }
+            var marker = new map_marker(latlng_median,map_marker_opts);
+
+// Add the tie point to the route
+            me.drag_marker = marker;
+
         }
       }
       else if (me.drag_marker) {
-          map.removeOverlay(me.drag_marker);
+          map.removeOverlay(me.drag_marker.marker);
           me.drag_marker = null;
       }
       return 1;

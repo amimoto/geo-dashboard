@@ -24,9 +24,14 @@ function geod_directions (form) {
 
 // And show the new route
                 me.show();
+            },
+            drag_marker_opts: {
             }
         });
         g.search(direction_list);
+
+// And register the new route on the stack
+        route_stack.push(g);
     }
 
     return false;
