@@ -1,0 +1,74 @@
+<script>
+/*****************************************************************
+ ** 
+ *****************************************************************/
+
+function geod_login ( form ) {
+// --------------------------------------------------
+    return false;
+}
+
+</script>
+
+<form id="dialog-form" class="form-dialog" action="login.json" method="post" onsubmit="return geod_login(this)" style="">
+
+  <div class="ui-widget" id="dialog-error" style="display:none" >
+    <div class="ui-state-error ui-corner-all"> 
+      <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span> 
+      <strong>Alert:</strong> <span id="dialog-error-message">ERROR!</a></p> 
+    </div> 
+  </div> 
+
+  <div class="form-row">
+    <label>Name</label>
+    <input type="text" name="trk_name" />
+  </div>
+
+  <div class="form-row">
+    <label>Description</label>
+    <textarea name="trk_description" rows="4" cols="40"></textarea>
+  </div>
+
+  <table id="file-list" style="padding:0px">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Created</th>
+        <th>Nodes</th>
+      </tr>
+    </thead>
+
+    <tbody>
+
+      <tr>
+        <td>Hoserpla</td>
+        <td>1235-12-34</td>
+        <td>123</td>
+      </tr>
+
+      <tr>
+        <td>Hoserpla1</td>
+        <td>1235-12-34</td>
+        <td>123</td>
+      </tr>
+
+      <tr>
+        <td>Hoserpla2</td>
+        <td>1235-12-34</td>
+        <td>123</td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <script type="text/javascript">
+    $(function(){
+      $("#file-list").dataTable({
+        "bJQueryUI": true,
+        "bPaginate": false
+      });
+    });
+  </script>
+
+</form>
+
