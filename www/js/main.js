@@ -58,9 +58,10 @@ var menu_proto = [
 // route to their personal database for future recall
 //
     function (pixel,latlon,latlon_str) {
-      if (!session) return;
+      if (!session)            return;
+      if (!under_mouse.length) return;
       var opt={}; opt['Save Directions'] = {
-          onclick: function () { gps_poll_pause = !gps_poll_pause; },
+          onclick: menuaction_directions_save,
           icon: "css/images/icon-save.png"
       }; return opt; },
 
@@ -175,10 +176,9 @@ $(function(){
 
 // Account for when we're floating over something        
         if ( under_mouse.length > 0 ) {
-            console.log("we have something under us!");
         }
 
-		var cmenu = $.contextMenu.create(contextmenu_event_show,{theme:"vista"});
+        var cmenu = $.contextMenu.create(contextmenu_event_show,{theme:"vista"});
         point.pageX = point.x;
         point.pageY = point.y;
         cmenu.show($('#map_canvas'),point);
@@ -208,6 +208,15 @@ $(function(){
             }
         }
     );
+
+// Let's try and load the new object
+    var g = new route_directions({
+        map: map,
+        callback: function (me) {
+            me.show();
+        }
+    });
+    g.search(['vancouver','west vancouver']);
 
 // Setup the GPS position poll
     $().everyTime( tics_status_poll, gps_status_poll );
@@ -348,6 +357,11 @@ function menuaction_logout () {
 function menuaction_directions (menu_item,menu) {
 // --------------------------------------------------
     dialog_load('Location Search','dialog-directions.html');
+}
+
+function menuaction_directions_save (menu_item,menu) {
+// --------------------------------------------------
+    dialog_load('Direction Save','dialog-directions-save.html');
 }
 
 function menuaction_directions_load (menu_item,menu) {

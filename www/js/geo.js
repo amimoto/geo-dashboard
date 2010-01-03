@@ -11,6 +11,7 @@ function map_marker (position,opts) {
  * This object handles a single Google Maps marker
  */ 
 
+    this.isa      = "map_marker";
     this.map      = opts["map"];
     this.position = position;
     this.marker   = new GMarker(position,opts["marker_opts"]);
@@ -59,7 +60,7 @@ function route_directions ( opts ) {
 /* --------------------------------------------------
  * This object handles a single Google Maps route
  */ 
-
+    this.isa              = "route_directions";
     this.map              = opts["map"];
     this.metadata         = opts["metadata"]   ? opts["metadata"]   : {};
     this.route_travelmode = opts["travelmode"] ? opts["travelmode"] : G_TRAVEL_MODE_DRIVING;
@@ -68,7 +69,7 @@ function route_directions ( opts ) {
     this.route_directions = directions;
     this.route_selected   = 0;
     this.polyline         = null;
-    this.drag_marker_opts = opts["drag_marker_opts"];
+    this.drag_marker_opts = opts["drag_marker_opts"] ? opts["drag_marker_opts"] : {};
     this.callback         = opts["callback"]   ? opts["callback"] 
                                                : function (obj) {};
     var me = this;
@@ -282,7 +283,7 @@ function polyline_handle ( opts ) {
  * Polyline handler. A wrapper for GPolyline for
  * some fun tricks
  */ 
-
+    this.isa              = "polyline_handle";
     this.map              = opts["map"];
     this.map_reposition   = true;
     this.polyline         = opts["polyline"];

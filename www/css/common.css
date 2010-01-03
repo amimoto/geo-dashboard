@@ -67,6 +67,7 @@ ul {
 }
 
 .form-dialog .form-row input,
+.form-dialog .form-row textarea,
 .form-dialog .form-row select 
  {
   margin: 0px 0px 0px 100px;
