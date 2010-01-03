@@ -317,7 +317,7 @@ function dialog_load ( title, page ) {
 // Load the appropriate dialog into the space
 //
   $('#dialog').load(
-                    page,
+                    "dialog/"+page,
                     null,
                     function () {
                       $('#dialog').dialog('option','title',title);
