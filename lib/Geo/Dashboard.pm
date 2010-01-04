@@ -1,33 +1,26 @@
 package Geo::Dashboard;
 
-use Moose;
+use Exporter;
+use vars qw/ @ISA @EXPORT /;
+@ISA = 'Exporter';
 
 our $UDB;
 our $DB;
 our $SESS;
-our $CFG = {
-    paths => {
-        templates => 'www',
-    },
-    webserver => {
-        index => 'index2.html',
-    },
-    database => {
-        db_fname => 'dashboard.sqlite',
-        user_db_fname => 'userdb_%s.sqlite',
-        db_path  => 'var/data',
-    },
-};
+our $CFG;
+@EXPORT = qw( $SESS $CFG );
 
 sub init {
 # --------------------------------------------------
 # Loads up the appropriate DB and configuration
 # values
 #
-    my ( $self ) = splice @_,0,2;
+    my ( $self, $app_base_path ) = splice @_,0,2;
 
-# Okay, we're made up
-    $self = $self->new(@_);
+# Load up the configuration. Wheee
+    my $conf_fpath = "$app_base_path/conf/dashboard.cfg";
+    $CFG = do $conf_fpath;
+    $CFG->{paths}{base} = $app_base_path;
 
 # Load up the required globals (eg. config, database, etc)
     require Geo::Dashboard::DB;

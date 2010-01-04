@@ -11,7 +11,7 @@ sub db {
 #
     return $Geo::Dashboard::DB ||= do {
         DBI->connect(
-            "dbi:SQLite:dbname=$Geo::Dashboard::CFG->{database}{db_path}/$Geo::Dashboard::CFG->{database}{db_fname}",
+            "dbi:SQLite:dbname=$CFG->{paths}{base}/$CFG->{database}{db_path}/$CFG->{database}{db_fname}",
             '',
             ''
         );
@@ -26,7 +26,7 @@ sub user_db {
     my ( $user_id ) = @_;
     return unless $user_id =~ /^\w+$/; 
         DBI->connect(
-            "dbi:SQLite:dbname=$Geo::Dashboard::CFG->{database}{db_fpath}",
+            "dbi:SQLite:dbname=$CFG->{paths}{base}/$CFG->{database}{db_fpath}",
             '',
             ''
         );
