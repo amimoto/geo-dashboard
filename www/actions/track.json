@@ -1,20 +1,22 @@
 #!/usr/bin/perl
 
 use strict;
-use Data::Dumper;
-use Geo::Dashboard::User;
 use Geo::Dashboard;
+use Geo::Dashboard::User::Track;
 
 # Requires 
-#   @param: usr_login 
-#   @param: usr_pass
+#   @param: a - action
+#   @param: s - session id
 
 my $args = $in->Vars;
-if ( my $login = Geo::Dashboard::User->user_login($args) ) {
-  print_json $login;
-}
+my $action = $args->{a};
 
-else {
-  print_json {error => "Invalid User"};
+if ( $action eq 'list' ) {
+    my $trk_list = Geo::Dashboard::User::Track->track_list($args);
+    print_json( $trk_list || {error=>"No tracks found"} );
+}
+elsif ( $action eq 'add' ) {
+    my $trk_add = Geo::Dashboard::User::Track->track_add($args);
+    print_json( $trk_add || {error=>"No tracks added"} );
 }
 

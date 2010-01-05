@@ -9,7 +9,7 @@ sub db {
 # This db accesses the global store for information, holding
 # information such as user accounts and bookmarks
 #
-    return $Geo::Dashboard::DB ||= do {
+    return $DB ||= do {
         DBI->connect(
             "dbi:SQLite:dbname=$CFG->{paths}{base}/$CFG->{database}{db_path}/$CFG->{database}{db_fname}",
             '',
@@ -23,14 +23,14 @@ sub user_db {
 # This db accesses the personal store for information, holding
 # information such as user's personal tracks and waypoints
 #
-    my ( $user_id ) = @_;
+    my ( $pkg, $user_id ) = @_;
     return unless $user_id =~ /^\w+$/; 
-        DBI->connect(
-            "dbi:SQLite:dbname=$CFG->{paths}{base}/$CFG->{database}{db_fpath}",
+    return $UDB ||= do { DBI->connect(
+            sprintf("dbi:SQLite:dbname=$CFG->{paths}{base}/$CFG->{database}{db_path}/$CFG->{database}{user_db_fname}", $user_id),
             '',
             ''
-        );
-
+        ) or die $DBI::errstr;
+    };
 }
 
 sub db_init {
@@ -71,16 +71,17 @@ sub user_db_init {
 # --------------------------------------------------
 # Initializes are the required tables in a user's database
 #
-    my ( $user_id ) = @_;
-    my $udb = user_db($user_id);
+    my ( $pkg, $user_id ) = @_;
+    my $udb = $pkg->user_db($user_id);
 
 # Create all the tables! Yay!
     for my $sql (
 
         qq`
             create table if not exists geodu_track (
-                trk_id integer autoincrement primary key,
+                trk_id integer primary key autoincrement,
                 trk_name varchar(255),
+                trk_created integer,
                 trk_bound_sw_lat float,
                 trk_bound_sw_lon float,
                 trk_bound_ne_lat float,
@@ -92,7 +93,7 @@ sub user_db_init {
 
         qq`
             create table if not exists geodu_waypoint (
-                wpt_id integer autoincrement primary key,
+                wpt_id integer primary key autoincrement,
                 wpt_name varchar(255),
                 wpt_description text,
                 wpt_lat float,
@@ -103,7 +104,7 @@ sub user_db_init {
         `,
 
     ) {
-        my $usth = $udb->prepare($sql) or die $DBI::errstr;
+        my $usth = $udb->prepare($sql) or die "$sql\n$DBI::errstr\n";
         $usth->execute or die $DBI::errstr;
     }
 
