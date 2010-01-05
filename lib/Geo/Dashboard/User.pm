@@ -99,6 +99,9 @@ sub user_login {
 # Logs a user into the system by validating that 
 # the authenitcation credentials are correct then
 # creating a new session for the user
+# Requires:
+#   @param: usr_login 
+#   @param: usr_pass
 #
     my ( $pkg, $args ) = @_;
 

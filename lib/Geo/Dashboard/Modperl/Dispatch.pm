@@ -3,6 +3,16 @@ package Geo::Dashboard::Modperl::Dispatch;
 use strict;
 use CGI;
 use Geo::Dashboard;
+use JSON;
+
+sub print_json {
+# --------------------------------------------------
+# Used by the sub applications.
+# Just print the json representation of an object
+#
+    my $args = shift;
+    print to_json($args);
+}
 
 sub dispatch {
 # --------------------------------------------------
@@ -24,11 +34,13 @@ sub dispatch {
                 open my $fh, "<$fpath";
                 local $/;
                 my $buf = <$fh>;
-                eval $buf;
+                eval $buf or print to_json({error => "$@"});
                 close $fh;
             };
         }
     }
+
+# We have no idea what request is for.
     else {
         $r->content_type("text/plain");
         print "Unknown action";

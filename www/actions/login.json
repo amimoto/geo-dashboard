@@ -1,25 +1,20 @@
-package Response;
+#!/usr/bin/perl
 
 use strict;
 use Data::Dumper;
-do '/home/aki/projects/geo-dashboard/lib/Geo/Dashboard/User.pm';
 use Geo::Dashboard::User;
+use Geo::Dashboard;
 
-sub run {
-# --------------------------------------------------
-# This will handle the login/logout for data fetching
-#
-    my ($cgi,$shared,$r,$c) = @_;
+# Requires 
+#   @param: usr_login 
+#   @param: usr_pass
 
-    my $args = $cgi->Vars;
-    if ( my $login = Geo::Dashboard::User->user_login($args) ) {
-      return $login;
-    }
-
-    else {
-      return {error => "Invalid User"};
-    }
+my $args = $in->Vars;
+if ( my $login = Geo::Dashboard::User->user_login($args) ) {
+  print_json $login;
 }
 
-1;
+else {
+  print_json {error => "Invalid User"};
+}
 

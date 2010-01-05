@@ -1,6 +1,0 @@
-#!/usr/bin/perl
-use vars qw/$COUNT/;
-
-use strict;
-print "Content-type: text/plain\n\n";
-print "Hello world!" . $COUNT++;
