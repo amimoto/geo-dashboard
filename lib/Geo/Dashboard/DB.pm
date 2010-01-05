@@ -71,7 +71,8 @@ sub user_db_init {
 # --------------------------------------------------
 # Initializes are the required tables in a user's database
 #
-    my $udb = user_db();
+    my ( $user_id ) = @_;
+    my $udb = user_db($user_id);
 
 # Create all the tables! Yay!
     for my $sql (
@@ -105,6 +106,8 @@ sub user_db_init {
         my $usth = $udb->prepare($sql) or die $DBI::errstr;
         $usth->execute or die $DBI::errstr;
     }
+
+    return $udb;
 }
 
 

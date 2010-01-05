@@ -4,6 +4,25 @@ use strict;
 use Geo::Dashboard;
 use Geo::Dashboard::DB;
 
+sub user_init {
+# --------------------------------------------------
+# Load's the associated user's UDB object and SESSION
+# object as required
+#
+    my ( $pkg, $sess_key ) = @_;
+
+# Figure out who this user is from their session
+    my $session = $SESS = $pkg->session_get({sess_key=>$sess_key}) or return;
+    return $session unless my $user = $session->{user};
+
+# Load up the user's database (create, if it doesn't exist)
+    require Geo::Dashboard::DB;
+    $UDB = Geo::Dashboard::DB->user_db_init($user->{usr_login});
+
+# Done!
+    return $session;
+}
+
 sub user_get {
 # --------------------------------------------------
 # Fetches a user record from the database
@@ -115,7 +134,7 @@ sub user_login {
     }
 
 # Does the user already have a session?
-    my $sess = $pkg->session_get($args);
+    my $sess = $SESS = $pkg->session_get($args);
     if ( $sess ) {
         $sess->{user} = $user;
         $pkg->session_update($sess);
@@ -125,6 +144,10 @@ sub user_login {
     else {
         $sess = $pkg->session_allocate({user=>$user});
     }
+
+# Load up the user's database (create, if it doesn't exist)
+    require Geo::Dashboard::DB;
+    $UDB = Geo::Dashboard::DB->user_db_init($user->{usr_login});
 
     return {
         user => $user,

@@ -3,6 +3,7 @@ package Geo::Dashboard::Modperl::Dispatch;
 use strict;
 use CGI;
 use Geo::Dashboard;
+use Geo::Dashboard::User;
 use JSON;
 
 sub print_json {
@@ -23,6 +24,11 @@ sub dispatch {
 
     my $in = CGI->new;
     my $uri = $r->uri;
+
+# If the user has provided us with a session key, let's authenticate them
+    if ( my $sess_key = $in->param('s') || $in->cookie('s') ) {
+        Geo::Dashboard::User->user_init($sess_key);
+    }
 
 # we're asking for a json action... let's see if 
 # we can find it

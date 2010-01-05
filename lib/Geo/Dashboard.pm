@@ -1,14 +1,9 @@
 package Geo::Dashboard;
 
 use Exporter;
-use vars qw/ @ISA @EXPORT /;
+our ( $UDB, $DB, $SESS, $CFG, @ISA, @EXPORT );
 @ISA = 'Exporter';
-
-our $UDB;
-our $DB;
-our $SESS;
-our $CFG;
-@EXPORT = qw( $SESS $CFG );
+@EXPORT = qw( $SESS $CFG $DB $UDB );
 
 sub init {
 # --------------------------------------------------

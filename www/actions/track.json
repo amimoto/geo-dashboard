@@ -1,0 +1,20 @@
+#!/usr/bin/perl
+
+use strict;
+use Data::Dumper;
+use Geo::Dashboard::User;
+use Geo::Dashboard;
+
+# Requires 
+#   @param: usr_login 
+#   @param: usr_pass
+
+my $args = $in->Vars;
+if ( my $login = Geo::Dashboard::User->user_login($args) ) {
+  print_json $login;
+}
+
+else {
+  print_json {error => "Invalid User"};
+}
+
