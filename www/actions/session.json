@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+
+use strict;
+use Geo::Dashboard;
+use Geo::Dashboard::User;
+
+# Requires
+#  - nothing -
+
+if ( $SESS ) {
+    my $user = $SESS->{user}?Geo::Dashboard::User->user_get($SESS->{user}):undef;
+    print_json({
+        sess => $SESS,
+        user => $user
+    });
+}
+else {
+    print_json_error("No session found");
+}
+
+
+
