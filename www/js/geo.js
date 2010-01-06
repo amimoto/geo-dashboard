@@ -90,6 +90,24 @@ function route_directions ( opts ) {
         );
     }
 
+// So we can convert the route into something saveable
+    this.serialize = function () {
+    // --------------------------------------------------
+        var track_verticies = [];
+        var polyline = me.polyline.polyline;
+        var polyline_vertices = polyline.getVertexCount();
+        for ( var i=1; i < polyline_vertices; i++ ) {
+            var vertex = polyline.getVertex(i);
+            track_verticies.push([vertex.lat(),vertex.lng()]);
+        }
+        var serialize_rec = {
+            waypoints: me.route_waypoints,
+            marker_verticies: me.marker_verticies,
+            track_vertices: track_verticies
+        };
+        return $.json.encode(serialize_rec);
+    };
+
 // Execute searching of directions...
     this.search = function ( waypoints ) {
     // --------------------------------------------------

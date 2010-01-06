@@ -14,6 +14,7 @@ var route_menu_lookup = {};
 
 var session;
 var user_info;
+var menu_route;
 
 /***********************************************************************
  * This structure controls the context menu. Note that the context
@@ -60,6 +61,7 @@ var menu_proto = [
     function (pixel,latlon,latlon_str) {
       if (!session)            return;
       if (!under_mouse.length) return;
+      menu_route = under_mouse[0];
       var opt={}; opt['Save Directions'] = {
           onclick: menuaction_directions_save,
           icon: "css/images/icon-save.png"
