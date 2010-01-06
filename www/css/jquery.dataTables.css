@@ -37,6 +37,14 @@
 	clear: both;
 }
 
+.dataTables_wrapper th {
+    padding: 4px;
+}
+
+.dataTables_wrapper td {
+    padding: 2px;
+}
+
 .dataTables_processing {
 	position: absolute;
 	top: 0px;
@@ -64,6 +72,7 @@
 .dataTables_info {
 	width: 60%;
 	float: left;
+    padding: 4px;
 }
 
 .dataTables_paginate {

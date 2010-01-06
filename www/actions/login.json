@@ -5,16 +5,33 @@ use Data::Dumper;
 use Geo::Dashboard::User;
 use Geo::Dashboard;
 
-# Requires 
+# ->Requires 
 #   @param: usr_login 
 #   @param: usr_pass
+# 
+# Returns->
+#   @param: hash with {
+#               sess => { - session info - },
+#               user => { - user info - }
+#           }
+#
+#   or
+#
+#   @param: { error => "Error message" }
+#
 
 my $args = $in->Vars;
 if ( my $login = Geo::Dashboard::User->user_login($args) ) {
-  print_json $login;
+  print_json( 
+    $login,
+    { cookies => [{
+            -name  => "s",
+            -value => $login->{sess}{ses_key}
+        }] },
+  );
 }
 
 else {
-  print_json {error => "Invalid User"};
+  print_json_error "Invalid User";
 }
 

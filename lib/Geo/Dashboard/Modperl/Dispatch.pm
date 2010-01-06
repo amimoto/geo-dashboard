@@ -5,14 +5,39 @@ use CGI;
 use Geo::Dashboard;
 use Geo::Dashboard::User;
 use JSON;
+our $R;
 
 sub print_json {
 # --------------------------------------------------
 # Used by the sub applications.
 # Just print the json representation of an object
 #
-    my $args = shift;
+    my ( $args, $opts ) = @_;
+
+# We will set (what appears to be) the proper mimetype
+# for the json response.
+    $R->content_type("application/json");
+
+# We will handle cookies if there are any to send
+    if (my $cookies=$opts->{cookies}) {
+        require CGI::Cookie;
+        my $headers_out = $R->headers_out;
+        for my $c (@$cookies) {
+            my $cookie = CGI::Cookie->new(%$c);
+            $headers_out->add("Set-Cookie",$cookie);
+        }
+    };
+
+# Send the JSON object to the browser
     print to_json($args);
+}
+
+sub print_json_error {
+# --------------------------------------------------
+# Just dumps an error message to stdout. Whoops! :)
+#
+    my ( $message ) = @_;
+    print_json({error=>$message});
 }
 
 sub dispatch {
@@ -24,6 +49,7 @@ sub dispatch {
 
     my $in = CGI->new;
     my $uri = $r->uri;
+    $R = $r;
 
 # If the user has provided us with a session key, let's authenticate them
     if ( my $sess_key = $in->param('s') || $in->cookie('s') ) {
@@ -35,12 +61,11 @@ sub dispatch {
     if ( $uri =~ m,^/actions/\w+\.json$, ) {
         my $fpath = "$CFG->{paths}{base}/$CFG->{paths}{templates}$uri";
         if ( -f $fpath ) {
-            $r->content_type("application/json");
             {
                 open my $fh, "<$fpath";
                 local $/;
                 my $buf = <$fh>;
-                eval $buf or print to_json({error => "$@"});
+                eval $buf or print_json_error("$@");
                 close $fh;
             };
         }
@@ -51,6 +76,9 @@ sub dispatch {
         $r->content_type("text/plain");
         print "Unknown action";
     }
+
+# Free $R :)
+    $R = undef;
 
     return Apache2::Const::OK;
 };

@@ -20,3 +20,6 @@ elsif ( $action eq 'add' ) {
     print_json( $trk_add || {error=>"No tracks added"} );
 }
 
+else {
+    print_json({error=>"Unknown action requested"}):
+}

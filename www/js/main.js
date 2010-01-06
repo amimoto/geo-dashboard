@@ -71,7 +71,7 @@ var menu_proto = [
     function (pixel,latlon,latlon_str) {
       if (!session) return;
       var opt={}; opt['Load Directions'] = {
-          onclick: function () { gps_poll_pause = !gps_poll_pause; },
+          onclick: menuaction_directions_load,
           icon: "css/images/icon-open.png"
       }; return opt; },
 
@@ -80,6 +80,7 @@ var menu_proto = [
 // updates that will place the user on the map
 //
     function (pixel,latlon,latlon_str) {
+      if (!session) return;
       var opt={}; opt['Use GPS'] = {
           onclick: function () { gps_poll_pause = !gps_poll_pause; },
           icon: ( gps_poll_pause ? "css/images/cross.png" : "css/images/accept.png" )
@@ -142,6 +143,9 @@ var menu_proto = [
  ***************************************************
  ***************************************************/
 $(function(){
+
+// Check if the user's already logged in
+    login_status_check();
 
 // JQuery UI settings
 //  $('#map_canvas').contextMenu(
@@ -221,6 +225,22 @@ $(function(){
 // Setup the GPS position poll
     $().everyTime( tics_status_poll, gps_status_poll );
 });
+
+function login_status_check () {
+// --------------------------------------------------
+// If the user hits "reload" this will clear the
+// "session" global. We want to see if the user is
+// actually logged in (via cookies) still
+//
+    $.getJSON(
+        'actions/session.json',
+        {},
+        function (data) {
+            session   = data.sess;
+            user_info = data.user;
+        }
+    );
+}
 
 /***************************************************
  * EVENTS
@@ -366,7 +386,7 @@ function menuaction_directions_save (menu_item,menu) {
 
 function menuaction_directions_load (menu_item,menu) {
 // --------------------------------------------------
-    $('#dialog').dialog('open');
+    dialog_load('Direction Load','dialog-directions-load.html');
 }
 
 function menuaction_directions_here (menu_item,menu) {
