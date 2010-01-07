@@ -29,7 +29,9 @@ sub print_json {
     };
 
 # Send the JSON object to the browser
-    print to_json($args);
+    my $json_data = to_json($args);
+    warn "JSON: $json_data\n";
+    print $json_data;
 }
 
 sub print_json_error {
@@ -65,10 +67,7 @@ sub dispatch {
                 open my $fh, "<$fpath";
                 local $/;
                 my $buf = <$fh>;
-                eval $buf or print_json_error("$@");
-                if ( $E->has_errors ) {
-                    print_json_error( $E->message );
-                };
+                eval $buf or print_json_error( $E->message || "$@" );
                 close $fh;
             };
         }

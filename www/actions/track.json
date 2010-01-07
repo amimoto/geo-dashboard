@@ -11,9 +11,6 @@ use Geo::Dashboard::User::Track;
 my $args = $in->Vars;
 my $action = $args->{a};
 
-$E->e("hello world");
-return;
-
 if ( $action eq 'list' ) {
     my $trk_list = Geo::Dashboard::User::Track->track_list($args);
     print_json( $trk_list || {error=>"No tracks found"} );

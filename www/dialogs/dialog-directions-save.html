@@ -8,7 +8,7 @@ function geod_track_save ( form ) {
     $(form).ajaxSubmit({
       dataType: "json",
       success: function (data) {
-        if ( data.error ) {
+        if ( data.sess ) {
             $('#dialog-error-message').html(data.error);
             $('#dialog-error').slideDown();
             $('#dialog').dialog('close');

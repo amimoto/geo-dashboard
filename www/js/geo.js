@@ -108,6 +108,29 @@ function route_directions ( opts ) {
         return $.json.encode(serialize_rec);
     };
 
+// Load the serialized data back into the record
+    this.unserialize = function ( serialized ) {
+    // --------------------------------------------------
+        var serialize_rec   = $.json.decode(serialized);
+        me.route_waypoints  = serialize_rec.route_waypoints;
+        me.marker_waypoints = serialize_rec.marker_verticies;
+        var polyline_verticies = serialize_rec.track_vertices;
+        var polyline_array = [];
+        for ( var i in polyline_verticies ) {
+            var vertex = polyline_verticies[i];
+            var latlng = new GLatLng(vertex[0],vertex[1]);
+            polyline_array.push(latlng);
+        }
+        var polyline = new GPolyline( polyline_array );
+        me.polyline = new polyline_handle({
+            map: me.map,
+            polyline: polyline,
+            draggable: true,
+            drag_marker_opts: me.drag_marker_opts,
+            cb_dragend: function (latlon,polyline) { me.event_edgedragend(latlon,polyline) }
+        });
+    };
+
 // Execute searching of directions...
     this.search = function ( waypoints ) {
     // --------------------------------------------------
