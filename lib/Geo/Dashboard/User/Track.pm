@@ -45,10 +45,18 @@ sub track_get {
     return unless $UDB;
     my $fetch_sql = "select * from geodu_track where ";
     if ($args->{trk_name}) {
-        return $UDB->selectrow_hashref($fetch_sql."trk_name=?",$args->{trk_name}) or die $DBI::errstr;
+        return $UDB->selectrow_hashref(
+                        $fetch_sql."trk_name=?",
+                        {},
+                        $args->{trk_name}
+                    ) or die $DBI::errstr;
     }
     elsif ( $args->{trk_id} ) {
-        return $UDB->selectrow_hashref($fetch_sql."trk_id=?",$args->{trk_id}) or die $DBI::errstr;
+        return $UDB->selectrow_hashref(
+                        $fetch_sql."trk_id=?",
+                        {},
+                        $args->{trk_id}
+                    ) or die $DBI::errstr;
     }
     return
 }
@@ -59,7 +67,9 @@ sub track_add {
 # We're not going to do anything fancy :)
 #
     my ( $pkg, $args ) = @_;
+
     return unless $UDB;
+    return unless exists $args->{trk_name} and $args->{trk_name};
 
 # Figure out what we're going to set 
     my ( @fields, @values );
@@ -70,13 +80,25 @@ sub track_add {
         push @values, $args->{$k};
     }
 
+# Make sure we have a track name
+    my $trk_name = $args->{trk_name};
+
+# Ensure we're not going to wipe out an existing entry
+    if ( my $existing = $pkg->track_get({trk_name=>$trk_name}) ) {
+        return;
+    };
+
 # Create the happy query
-    my $add_sql = "insert into geodu_waypoints (".join(",",@fields).")".join(",",map {"?"} @fields);
+    my $add_sql = "insert into geodu_track ("
+                                            .join(",",@fields)
+                                        .") values ("
+                                            .join(",",map {"?"} @fields)
+                                        .")";
     my $add_sth = $UDB->prepare($add_sql) or die $DBI::errstr;
     $add_sth->execute(@values) or die $DBI::errstr;
 
 # Now, return the new record
-    return $pkg->track_get($args);
+    return $pkg->track_get({trk_name=>$trk_name});
 }
 
 1;

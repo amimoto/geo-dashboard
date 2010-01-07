@@ -1,9 +1,9 @@
 package Geo::Dashboard;
 
 use Exporter;
-our ( $UDB, $DB, $SESS, $CFG, @ISA, @EXPORT );
+our ( $UDB, $DB, $SESS, $CFG, @ISA, @EXPORT, $E );
 @ISA = 'Exporter';
-@EXPORT = qw( $SESS $CFG $DB $UDB );
+@EXPORT = qw( $SESS $CFG $DB $UDB $E );
 
 sub init {
 # --------------------------------------------------
@@ -20,6 +20,10 @@ sub init {
 # Load up the required globals (eg. config, database, etc)
     require Geo::Dashboard::DB;
     $DB = Geo::Dashboard::DB::db();
+
+# Create the global error handler
+    require Geo::Dashboard::Error;
+    $E = Geo::Dashboard::Error->new;
 
     return $self;
 }

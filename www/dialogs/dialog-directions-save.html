@@ -5,6 +5,19 @@
 
 function geod_track_save ( form ) {
 // --------------------------------------------------
+    $(form).ajaxSubmit({
+      dataType: "json",
+      success: function (data) {
+        if ( data.error ) {
+            $('#dialog-error-message').html(data.error);
+            $('#dialog-error').slideDown();
+            $('#dialog').dialog('close');
+        }
+        else {
+            $('#dialog').dialog('close');
+        }
+      }
+    });
     return false;
 }
 
@@ -13,7 +26,7 @@ function geod_track_save ( form ) {
 <form id="dialog-form" class="form-dialog" action="actions/track.json" method="post" onsubmit="return geod_track_save(this)" style="">
 
   <input type="hidden" name="a" value="add" />
-  <input type="hidden" name="track_serialized" id="track_serialized" />
+  <input type="hidden" name="trk_data" id="trk_data" />
 
   <div class="ui-widget" id="dialog-error" style="display:none" >
     <div class="ui-state-error ui-corner-all"> 
@@ -54,7 +67,7 @@ function geod_track_save ( form ) {
 
   <script type="text/javascript">
     $(function(){
-      $("#track_serialized").val(menu_route.serialize());
+      $("#trk_data").val(menu_route.serialize());
       $("#file-list").dataTable({});
     });
   </script>

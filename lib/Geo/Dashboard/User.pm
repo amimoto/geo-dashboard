@@ -13,7 +13,7 @@ sub user_init {
 
 # Figure out who this user is from their session
     my $session = $SESS = $pkg->session_get({sess_key=>$sess_key}) or return;
-    return $session unless my $user = $session->{user};
+    return $session unless my $user = $session->{ses_data}{user};
 
 # Load up the user's database (create, if it doesn't exist)
     require Geo::Dashboard::DB;

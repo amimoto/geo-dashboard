@@ -66,6 +66,9 @@ sub dispatch {
                 local $/;
                 my $buf = <$fh>;
                 eval $buf or print_json_error("$@");
+                if ( $E->has_errors ) {
+                    print_json_error( $E->message );
+                };
                 close $fh;
             };
         }
