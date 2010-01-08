@@ -96,7 +96,7 @@ sub dispatch {
 # Free $R :)
     $R = undef;
 
-    return Apache2::Const::OK;
+    return Apache2::Const::OK();
 };
 
 1;
