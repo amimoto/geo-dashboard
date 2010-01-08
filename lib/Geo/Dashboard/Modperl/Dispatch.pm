@@ -73,6 +73,20 @@ sub dispatch {
         }
     }
 
+# If we're just asking for a phtml file (parsed perl html)
+    elsif ( $uri =~ m,\.phtml$, ) {
+        my $fpath = "$CFG->{paths}{base}/$CFG->{paths}{templates}$uri";
+        if ( -f $fpath ) {
+            {
+                open my $fh, "<$fpath";
+                local $/;
+                my $buf = <$fh>;
+                eval $buf or print_json_error( $E->message || "$@" );
+                close $fh;
+            };
+        }
+    }
+
 # We have no idea what request is for.
     else {
         $r->content_type("text/plain");
