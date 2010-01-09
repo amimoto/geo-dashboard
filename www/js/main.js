@@ -363,32 +363,32 @@ function dialog_load ( title, page ) {
 
 function menuaction_login () {
 // --------------------------------------------------
-    dialog_load('Login','dialog-login.html');
+    dialog_load('Login','dialog-login.phtml');
 }
 
 function menuaction_search () {
 // --------------------------------------------------
-    dialog_load('Login','dialog-search.html');
+    dialog_load('Login','dialog-search.phtml');
 }
 
 function menuaction_logout () {
 // --------------------------------------------------
-    dialog_load('Logout','dialog-logout.html');
+    dialog_load('Logout','dialog-logout.phtml');
 }
 
 function menuaction_directions (menu_item,menu) {
 // --------------------------------------------------
-    dialog_load('Location Search','dialog-directions.html');
+    dialog_load('Location Search','dialog-directions.phtml');
 }
 
 function menuaction_directions_save (menu_item,menu) {
 // --------------------------------------------------
-    dialog_load('Direction Save','dialog-directions-save.html');
+    dialog_load('Direction Save','dialog-directions-save.phtml');
 }
 
 function menuaction_directions_load (menu_item,menu) {
 // --------------------------------------------------
-    dialog_load('Direction Load','dialog-directions-load.html');
+    dialog_load('Direction Load','dialog-directions-load.phtml');
 }
 
 function menuaction_directions_here (menu_item,menu) {

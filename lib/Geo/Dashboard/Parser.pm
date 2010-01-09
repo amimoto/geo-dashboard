@@ -68,6 +68,7 @@ sub make {
 
 # Nope, it's a path to a file!
     else {
+
         $cache_name = $self->fpath( $cache_name, $opts->{root_path}, $args );
         return $CACHE->{$cache_name}[0] if $self->{cache} and $CACHE->{$cache_name};
         return unless -f $cache_name;
@@ -173,7 +174,7 @@ sub fpath {
     my ( $self, $fname, $root, $args ) = @_;
 
 # We only allow "safe" names for templates
-    $fname =~ /^([\w\s]+\.?\/?)+[\w+]$/ or return;
+    $fname =~ /^([\w\s\-]+\.?\/?)+[\w+]$/ or return;
 
     defined $root or $root = $self->{root_path};
 
