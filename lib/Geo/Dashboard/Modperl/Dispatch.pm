@@ -58,6 +58,10 @@ sub dispatch {
         Geo::Dashboard::User->user_init($sess_key);
     }
 
+# Just in case someone's trying to do something sneaky
+    $uri =~ s,\.\.+,,g;
+    $uri =~ s,\/\/+,\/,g;
+
 # we're asking for a json action... let's see if 
 # we can find it
     if ( $uri =~ m,^/actions/\w+\.json$, ) {
@@ -75,15 +79,35 @@ sub dispatch {
 
 # If we're just asking for a phtml file (parsed perl html)
     elsif ( $uri =~ m,\.phtml$, ) {
+        require Geo::Dashboard::Parser;
+        my $parser = Geo::Dashboard::Parser->new({
+                            root_path => "$CFG->{paths}{base}/$CFG->{paths}{templates}",
+                            cache => 0,
+                            compile_header => q`#line 1:eval
+                            sub {
+                                my ( $self, $args, $opts ) = @_;
+                                my $R = $opts->{R};
+                                my $in = $opts->{in};
+                                local $TEMPLATE_OUTPUT = '';
+                                sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
+                                sub include {$TEMPLATE_OUTPUT.=$self->parse(shift,$args,$opts)};
+#line 1
+`,
+                        });
         my $fpath = "$CFG->{paths}{base}/$CFG->{paths}{templates}$uri";
         if ( -f $fpath ) {
-            {
-                open my $fh, "<$fpath";
-                local $/;
-                my $buf = <$fh>;
-                eval $buf or print_json_error( $E->message || "$@" );
-                close $fh;
-            };
+# We need to strip the leading slash from the path
+            $uri =~ s,^\/+,,;
+            $r->content_type("text/plain");
+            my $data = $parser->parse(
+                                $uri,
+                                $fpath,
+                                {
+                                    R => $r,
+                                    in => $in
+                                }
+                            );
+            print $data;
         }
     }
 
@@ -95,6 +119,7 @@ sub dispatch {
 
 # Free $R :)
     $R = undef;
+    $r = undef;
 
     return Apache2::Const::OK();
 };

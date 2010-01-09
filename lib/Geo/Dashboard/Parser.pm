@@ -8,22 +8,25 @@
 # Description: Allowed embedded perl
 #
 
-package Geo::Dashboard::EmbPerl;
+package Geo::Dashboard::Parser;
 # ==================================================================
 
 use strict;
 use Moose;
+our $CACHE;
+our $TEMPLATE_OUTPUT;
 has root_path => ( is => "rw", isa => "Str", default => "" );
 has cache_path => ( is => "rw", isa => "Str", default => "" );
 has cache => ( is => "rw", isa => "Str", default => "0" );
-has compile_header => ( is => "rw", isa => "Str", default => q`
+has compile_header => ( is => "rw", isa => "Str", default => q`#line 1:eval
                             sub {
                                 my ( $self, $args, $opts ) = @_;
                                 local $TEMPLATE_OUTPUT = '';
                                 sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
                                 sub include {$TEMPLATE_OUTPUT.=$self->parse(shift,$args,$opts)};
-                        ` );
-has compile_header => ( is => "rw", isa => "Str", default => q`
+#line 1
+` );
+has compile_footer => ( is => "rw", isa => "Str", default => q`
                                 return $TEMPLATE_OUTPUT;
                             }
                         `);
@@ -67,8 +70,10 @@ sub make {
     else {
         $cache_name = $self->fpath( $cache_name, $opts->{root_path}, $args );
         return $CACHE->{$cache_name}[0] if $self->{cache} and $CACHE->{$cache_name};
-        require AM::File;
-        $data = AM::File->gulp( $cache_name );
+        return unless -f $cache_name;
+        open my $fh, "<$cache_name" or return;
+        local $/;
+        $data = <$fh>;
     }
 
 # Make sure we have something to parse!
@@ -140,14 +145,17 @@ sub make {
         }
         else {
             next if $e->[0] eq '';
-            $compiled .= qq{out "} . quotemeta($e->[0]) . qq{";\n};
+            $compiled .= qq{out("} . quotemeta($e->[0]) . qq{");\n};
         }
     }
 
-    my $compiled_fn = eval ( $self->{compile_header}
+    my $compiled_str = $self->compile_header
                              . $compiled 
-                             . $self->{compile_footer} );
-    $@ and die $@;
+                             . $self->compile_footer;
+    no warnings;
+    my $compiled_fn = eval $compiled_str;
+    use warnings;
+    $@ and die "Could not commpile template because: $@";
 
     $self->{cache} and $cache_name and $CACHE->{$cache_name} = [ $compiled_fn, time ];
 
