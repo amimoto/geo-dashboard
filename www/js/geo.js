@@ -112,8 +112,8 @@ function route_directions ( opts ) {
     this.unserialize = function ( serialized ) {
     // --------------------------------------------------
         var serialize_rec   = $.json.decode(serialized);
-        me.route_waypoints  = serialize_rec.route_waypoints;
-        me.marker_waypoints = serialize_rec.marker_verticies;
+        me.route_waypoints  = serialize_rec.waypoints;
+        me.marker_verticies = serialize_rec.marker_verticies;
         var polyline_verticies = serialize_rec.track_vertices;
         var polyline_array = [];
         for ( var i in polyline_verticies ) {

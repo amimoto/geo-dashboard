@@ -257,7 +257,10 @@ function track_load ( trk_id ) {
         trk_id: trk_id
       },
       function (data) {
-        route = new route_directions({ map: map });
+        route = new route_directions({ 
+                        map: map,
+                        callback: function (me) { me.show(); }
+                    });
         route.unserialize(data.trk_data);
         route.show();
       }
