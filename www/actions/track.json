@@ -15,10 +15,17 @@ if ( $action eq 'list' ) {
     my $trk_list = Geo::Dashboard::User::Track->track_list($args);
     print_json( $trk_list || {error=>"No tracks found"} );
 }
+
 elsif ( $action eq 'add' ) {
     my $trk_add = Geo::Dashboard::User::Track->track_add($args);
     print_json( $trk_add || {error=>"No tracks added"} );
 }
+
+elsif ( $action eq 'get' ) {
+    my $trk_rec = Geo::Dashboard::User::Track->track_get($args);
+    print_json( $trk_rec|| {error=>"No tracks found"} );
+}
+
 
 else {
     print_json({error=>"Unknown action requested"});

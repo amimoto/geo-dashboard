@@ -216,6 +216,7 @@ $(function(){
     );
 
 // Let's try and load the new object
+    /*
     var g = new route_directions({
         map: map,
         callback: function (me) {
@@ -223,6 +224,7 @@ $(function(){
         }
     });
     g.search(['vancouver','west vancouver']);
+*/
 
 // Setup the GPS position poll
     $().everyTime( tics_status_poll, gps_status_poll );
@@ -241,6 +243,24 @@ function login_status_check () {
             session   = data.sess;
             user_info = data.user;
         }
+    );
+}
+
+function track_load ( trk_id ) {
+// --------------------------------------------------
+// Loads a particular track onto the current map
+// 
+    $.getJSON(
+      'actions/track.json',
+      {
+        a: "get",
+        trk_id: trk_id
+      },
+      function (data) {
+        route = new route_directions({ map: map });
+        route.unserialize(data.trk_data);
+        route.show();
+      }
     );
 }
 

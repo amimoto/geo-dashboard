@@ -13,19 +13,16 @@ package Geo::Dashboard::Parser;
 
 use strict;
 use Moose;
-our $CACHE;
-our $TEMPLATE_OUTPUT;
+our ( $CACHE, $TEMPLATE_OUTPUT, $SELF, $ARGS, $OPTS );
 has root_path => ( is => "rw", isa => "Str", default => "" );
 has cache_path => ( is => "rw", isa => "Str", default => "" );
 has cache => ( is => "rw", isa => "Str", default => "0" );
 has compile_header => ( is => "rw", isa => "Str", default => q`#line 1:eval
                             sub {
-                                my ( $self, $args, $opts ) = @_;
                                 local $TEMPLATE_OUTPUT = '';
                                 sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
-                                sub include {$TEMPLATE_OUTPUT.=$self->parse(shift,$args,$opts)};
-#line 1
-` );
+                                sub include {$TEMPLATE_OUTPUT.=$SELF->parse(shift,$ARGS,$OPTS)};` );
+
 has compile_footer => ( is => "rw", isa => "Str", default => q`
                                 return $TEMPLATE_OUTPUT;
                             }
@@ -45,7 +42,12 @@ sub parse {
     my $compiled_fn = $self->make( $cache_name, $args, $opts ) or return;
 
     my $buf;
-    eval { $buf = $compiled_fn->( $self, $args, $opts ) };
+    eval { 
+        local $SELF = $self;
+        local $ARGS = $args;
+        local $OPTS = $opts;
+        $buf = $compiled_fn->();
+    };
     $@ and die $@;
 
     return $buf;
@@ -153,9 +155,7 @@ sub make {
     my $compiled_str = $self->compile_header
                              . $compiled 
                              . $self->compile_footer;
-    no warnings;
     my $compiled_fn = eval $compiled_str;
-    use warnings;
     $@ and die "Could not commpile template because: $@";
 
     $self->{cache} and $cache_name and $CACHE->{$cache_name} = [ $compiled_fn, time ];

@@ -85,20 +85,17 @@ sub dispatch {
                             cache => 0,
                             compile_header => q`#line 1:eval
                             sub {
-                                my ( $self, $args, $opts ) = @_;
-                                my $R = $opts->{R};
-                                my $in = $opts->{in};
                                 local $TEMPLATE_OUTPUT = '';
                                 sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
-                                sub include {$TEMPLATE_OUTPUT.=$self->parse(shift,$args,$opts)};
-#line 1
-`,
+                                sub include {$TEMPLATE_OUTPUT.=$SELF->parse(shift,$ARGS,$OPTS)};
+                                my $R = $OPTS->{R};
+                                my $in = $OPTS->{in};
                         });
         my $fpath = "$CFG->{paths}{base}/$CFG->{paths}{templates}$uri";
         if ( -f $fpath ) {
 # We need to strip the leading slash from the path
             $uri =~ s,^\/+,,;
-            $r->content_type("text/plain");
+            $r->content_type("text/html");
             my $data = $parser->parse(
                                 $uri,
                                 $fpath,

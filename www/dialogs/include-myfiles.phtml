@@ -1,0 +1,33 @@
+<table>
+
+<?
+  require Geo::Dashboard::User::Track;
+  require JSON;
+  my $trk_list = Geo::Dashboard::User::Track->track_list($args);
+  if ( $trk_list ) {
+?>
+
+  <tr>
+    <td>Name</td>
+    <td>Creation Date</td>
+    <td>Vertices</td>
+  </tr>
+
+  <?for my $trk ( @$trk_list ) {
+      my $trk_data = JSON::from_json( $trk->{trk_data} );
+  ?>
+
+    <tr>
+      <td>
+        <a href="#" onclick="return geod_dialog_track_click(<?=$trk->{trk_id}?>,'<?=quotemeta($trk->{trk_name})?>')">
+          <?=$trk->{trk_name}?>
+        </a>
+      </td>
+      <td><?=$trk->{trk_created}?localtime($trk->{trk_created}):'unknown'?></td>
+      <td><?=0+@{$trk_data->{track_vertices}||[]}?></td>
+    </tr>
+  <?}?>
+<?}?>
+
+
+</table>

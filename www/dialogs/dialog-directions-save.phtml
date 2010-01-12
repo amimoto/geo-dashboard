@@ -11,11 +11,8 @@ function geod_track_save ( form ) {
         if ( data.sess ) {
             $('#dialog-error-message').html(data.error);
             $('#dialog-error').slideDown();
-            $('#dialog').dialog('close');
         }
-        else {
-            $('#dialog').dialog('close');
-        }
+        $('#dialog').dialog('close');
       }
     });
     return false;

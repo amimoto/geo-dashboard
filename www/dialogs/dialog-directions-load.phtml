@@ -3,36 +3,14 @@
  ** 
  *****************************************************************/
 
-function geod_login ( form ) {
+function geod_dialog_track_click ( trk_id, trk_name ) {
 // --------------------------------------------------
+    track_load(trk_id);
+    $('#dialog').dialog('close');
     return false;
 }
 
 </script>
 
-  <table id="file-list" cellpadding="0" cellspacing="0" border="0"  style="padding:0px;width:100%">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Created</th>
-        <th>Nodes</th>
-      </tr>
-    </thead>
+<?include "dialogs/include-myfiles.phtml"?>
 
-    <tbody>
-
-      <tr>
-        <td>Hoserpla</td>
-        <td>1235-12-34</td>
-        <td>123</td>
-      </tr>
-
-    </tbody>
-  </table>
-
-  <script type="text/javascript">
-    $(function(){
-      $("#file-list").dataTable({
-      });
-    });
-  </script>
