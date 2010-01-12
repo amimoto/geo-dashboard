@@ -89,7 +89,7 @@ sub dispatch {
                                 sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
                                 sub include {$TEMPLATE_OUTPUT.=$SELF->parse(shift,$ARGS,$OPTS)};
                                 my $R = $OPTS->{R};
-                                my $in = $OPTS->{in};
+                                my $in = $OPTS->{in};`,
                         });
         my $fpath = "$CFG->{paths}{base}/$CFG->{paths}{templates}$uri";
         if ( -f $fpath ) {

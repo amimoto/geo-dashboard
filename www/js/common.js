@@ -6,7 +6,9 @@ var CFG = {
     urls: {
     },
     defaults: {
-      map_center:[49.315144,-123.138893], 
+
+      map_center:[40.759229,-73.984653], // Time's square, new york
+//      map_center:[49.315144,-123.138893], // Lion's gate bridge
       map_zoom: 13,
     },
 };
