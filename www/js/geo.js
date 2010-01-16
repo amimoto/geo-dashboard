@@ -131,6 +131,50 @@ function route_directions ( opts ) {
         });
     };
 
+// Load and show the marker vertices if we can find 'em.
+// This will also allow us to create drag points that
+// will move waypoints along the track instead of simply
+// creating a new one. How exciting! :D
+    this.markers_show = function () {
+    // --------------------------------------------------
+        if ( !me.polyline )                return;
+        if ( !me.route_waypoints )         return;
+        if ( !me.route_waypoints.length )  return;
+        if ( !me.marker_verticies )        return;
+        if ( !me.marker_verticies.length ) return;
+
+    // If there are any existing markers, let's get rid of them
+				me.markers_hide();
+
+		// Now we can finally reply all the markers onto the map.
+		// First we need to get the vertex thta this marker is supposed 
+		// to be linked to then we can use the provided coordinates to 
+		// locate the posiion for the new marker.
+				var polyline = me.polyline.polyline;
+        for (var i=0;i<me.marker_verticies.length;i++) {
+            var vertex_i = me.marker_verticies[i];
+						var vertex   = polyline.getVertex(vertex_i);
+						var marker   = map_marker(vertex);
+						marker.show();
+						marker_list.push(marker);
+        }
+    };
+
+
+// This is used to remove any markers that have been laid
+// out on the map. This should do a proper job of them by
+// removing them entirely from the map.
+		this.markers_hide = function () {
+    // --------------------------------------------------
+			if ( !me.marker_list ) return;
+			for ( var i in me.marker_list ) {
+				var marker = me.marker_list[i];
+				marker.destroy();
+			}
+			me.marker_list = null;
+		}
+
+
 // Execute searching of directions...
     this.search = function ( waypoints ) {
     // --------------------------------------------------

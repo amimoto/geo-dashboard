@@ -203,6 +203,7 @@ $(function(){
     $(".draggable").draggable();
     $("#accordion").accordion({ header: "h3", autoHeight: false });
 
+/*
 // TESTING!
     var my_marker = new map_marker(
         map_center,
@@ -216,7 +217,6 @@ $(function(){
     );
 
 // Let's try and load the new object
-    /*
     var g = new route_directions({
         map: map,
         callback: function (me) {
