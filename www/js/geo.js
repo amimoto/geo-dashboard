@@ -16,6 +16,7 @@ function map_marker (position,opts) {
     this.position = position;
     this.marker   = new GMarker(position,opts["marker_opts"]);
     this.marker.i = opts["i"];
+    this.marker_added = 0;
     var me        = this;
 
 // Return the overlay object that can be used with map.addOverlay
@@ -43,13 +44,15 @@ function map_marker (position,opts) {
 
 // Add the marker to the map
     this.show = function () {
-    me.hide();
-        me.overlay_id = me.map.addOverlay(me.marker);
+        me.hide();
+        me.map.addOverlay(me.marker);
     };
 
 // And when removing the object
     this.hide = function () {
-    me.map.removeOverlay(me.marker);
+        console.log("Hiding marker again: ");
+        console.log("Item: " + this.marker.i );
+        me.map.removeOverlay(me.marker);
     };
 
 // If we want to show the record right away...
@@ -174,7 +177,7 @@ function route_directions ( opts ) {
                               me.search();
                            };
 
-          var marker     = map_marker(
+          var marker     = new map_marker(
                               vertex,
                               {
                                   i: waypoint_i,
@@ -186,6 +189,7 @@ function route_directions ( opts ) {
                               }
                             );
           me.marker_list.push(marker);
+          console.log("Added marker: " + i);
       }
   };
 
@@ -195,9 +199,10 @@ function route_directions ( opts ) {
   this.markers_hide = function () {
   // --------------------------------------------------
     if ( !me.marker_list ) return;
-    for ( var i in me.marker_list ) {
+    for ( var i=0; i < me.marker_list.length;i++ ) {
       var marker = me.marker_list[i];
       marker.hide();
+      console.log("Hiding marker: " + i);
     }
     me.marker_list = null;
   }
@@ -328,8 +333,8 @@ function route_directions ( opts ) {
 
 // If the polyline already exists, we should probably nuke the existing
             if ( me.polyline ) {
+                me.markers_hide();
                 me.polyline.destroy();
-        me.markers_hide();
             }
 
 // Upon loading, we also need to know what each search location translates to
