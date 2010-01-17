@@ -203,29 +203,6 @@ $(function(){
     $(".draggable").draggable();
     $("#accordion").accordion({ header: "h3", autoHeight: false });
 
-/*
-// TESTING!
-    var my_marker = new map_marker(
-        map_center,
-        {
-            map:map,
-            show:1,
-            ev_click: function() {
-                alert("hello")
-            }
-        }
-    );
-
-// Let's try and load the new object
-    var g = new route_directions({
-        map: map,
-        callback: function (me) {
-            me.show();
-        }
-    });
-    g.search(['vancouver','west vancouver']);
-*/
-
 // Setup the GPS position poll
     $().everyTime( tics_status_poll, gps_status_poll );
 });

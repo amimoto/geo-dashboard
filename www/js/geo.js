@@ -15,7 +15,8 @@ function map_marker (position,opts) {
     this.map      = opts["map"];
     this.position = position;
     this.marker   = new GMarker(position,opts["marker_opts"]);
-    var me = this;
+    this.marker.i = opts["i"];
+    var me        = this;
 
 // Return the overlay object that can be used with map.addOverlay
     this.overlay = function () {
@@ -23,7 +24,11 @@ function map_marker (position,opts) {
     };
 
 // Handle some basic events
-    var ev_list = ['click','dbleclick','mouseover','mouseout','mousedown','mouseup','dragstart','drag','dragend','remove'];
+    var ev_list = [
+          'click','dbleclick',
+          'mouseover','mouseout','mousedown','mouseup',
+          'dragstart','drag','dragend','remove'
+          ];
     this.ev_list = ev_list;
     for ( var i in ev_list ) {
         var ev_name = ev_list[i];
@@ -38,11 +43,13 @@ function map_marker (position,opts) {
 
 // Add the marker to the map
     this.show = function () {
-        me.map.addOverlay(me.marker);
+    me.hide();
+        me.overlay_id = me.map.addOverlay(me.marker);
     };
 
 // And when removing the object
-    this.destroy = function () {
+    this.hide = function () {
+    me.map.removeOverlay(me.marker);
     };
 
 // If we want to show the record right away...
@@ -135,45 +142,74 @@ function route_directions ( opts ) {
 // This will also allow us to create drag points that
 // will move waypoints along the track instead of simply
 // creating a new one. How exciting! :D
-    this.markers_show = function () {
-    // --------------------------------------------------
-        if ( !me.polyline )                return;
-        if ( !me.route_waypoints )         return;
-        if ( !me.route_waypoints.length )  return;
-        if ( !me.marker_verticies )        return;
-        if ( !me.marker_verticies.length ) return;
+  this.markers_show = function () {
+  // --------------------------------------------------
+      if ( !me.polyline )                return;
+      if ( !me.route_waypoints )         return;
+      if ( !me.route_waypoints.length )  return;
+      if ( !me.marker_verticies )        return;
+      if ( !me.marker_verticies.length ) return;
 
-    // If there are any existing markers, let's get rid of them
-				me.markers_hide();
+  // If there are any existing markers, let's get rid of them
+      me.markers_hide();
+      me.marker_list = [];
 
-		// Now we can finally reply all the markers onto the map.
-		// First we need to get the vertex thta this marker is supposed 
-		// to be linked to then we can use the provided coordinates to 
-		// locate the posiion for the new marker.
-				var polyline = me.polyline.polyline;
-        for (var i=0;i<me.marker_verticies.length;i++) {
-            var vertex_i = me.marker_verticies[i];
-						var vertex   = polyline.getVertex(vertex_i);
-						var marker   = map_marker(vertex);
-						marker.show();
-						marker_list.push(marker);
-        }
-    };
+  // Now we can finally reply all the markers onto the map.
+  // First we need to get the vertex thta this marker is supposed 
+  // to be linked to then we can use the provided coordinates to 
+  // locate the posiion for the new marker.
+      var polyline = me.polyline.polyline;
+      var polyline_vertices = polyline.getVertexCount();
+      for (var i=0;i<me.marker_verticies.length;i++) {
+          var vertex_i = me.marker_verticies[i];
+          if ( vertex_i >= polyline_vertices ) {
+            vertex_i = polyline_vertices - 1;
+          }
+          var vertex     = polyline.getVertex(vertex_i);
+          var waypoint_i = i+0;
 
+          var ev_dragend = function (latlon) {
+                              var waypoint_name = latlon.lat() + ", " + latlon.lng();
+                              me.route_waypoints[this.i] = waypoint_name;
+                              me.search();
+                           };
+
+          var marker     = map_marker(
+                              vertex,
+                              {
+                                  i: waypoint_i,
+                                  map:me.map,
+                                  show:1,
+                                  marker_opts: {draggable: 1},
+                                  ev_dragstart: function () {},
+                                  ev_dragend: ev_dragend
+                              }
+                            );
+          me.marker_list.push(marker);
+      }
+  };
 
 // This is used to remove any markers that have been laid
 // out on the map. This should do a proper job of them by
 // removing them entirely from the map.
-		this.markers_hide = function () {
-    // --------------------------------------------------
-			if ( !me.marker_list ) return;
-			for ( var i in me.marker_list ) {
-				var marker = me.marker_list[i];
-				marker.destroy();
-			}
-			me.marker_list = null;
-		}
+  this.markers_hide = function () {
+  // --------------------------------------------------
+    if ( !me.marker_list ) return;
+    for ( var i in me.marker_list ) {
+      var marker = me.marker_list[i];
+      marker.hide();
+    }
+    me.marker_list = null;
+  }
 
+// Instead of adding a waypoint, we will move an existing
+// waypoint to a new location.
+  this.waypoint_move = function ( waypoint_i, latlon ) {
+  // --------------------------------------------------
+      if ( !me.route_waypoints )         return;
+      var route_waypoints = me.route_waypoints;
+      if ( !me.route_waypoints.length )  return;
+  }
 
 // Execute searching of directions...
     this.search = function ( waypoints ) {
@@ -219,14 +255,15 @@ function route_directions ( opts ) {
     // --------------------------------------------------
         var str = 'from: ' + me.route_waypoints.join(" to: ");
         return str;
-    }
+    };
 
 // Show and setup the ability to modify the data
     this.show = function () {
     // --------------------------------------------------
         if (!me.polyline) return;
         me.polyline.show();
-    }
+    me.markers_show();
+    };
 
 // Hide and remove the ability to show the data
     this.hide = function () {
@@ -292,6 +329,7 @@ function route_directions ( opts ) {
 // If the polyline already exists, we should probably nuke the existing
             if ( me.polyline ) {
                 me.polyline.destroy();
+        me.markers_hide();
             }
 
 // Upon loading, we also need to know what each search location translates to
