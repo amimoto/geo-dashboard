@@ -1,7 +1,56 @@
+var id_counter = 0;
+
 /***********************************************************************
  * Useful layer stack
  ***********************************************************************/
- var under_mouse = [];
+var under_mouse = [];
+var under_mouse_lookup = {};
+function under_mouse_isa ( type ) {
+/* --------------------------------------------------
+ * returns an object of type "isa" if it can find
+ * an entry under the mouse
+ */ 
+ console.log(under_mouse);
+  if ( !under_mouse.length ) return;
+  for ( var i in under_mouse ) {
+      var r = under_mouse[i];
+      console.log("FOUND: " + r.isa + " vs type: " +type );
+      if ( r.isa == type ) return r;
+  }
+  return;
+}
+
+function under_mouse_push ( e ) {
+/* --------------------------------------------------
+ * marks the current element to be under the mouse
+ */ 
+  var seen = 0;
+  console.log("Pushing: " + e.obj_id + " type: " + e.isa);
+  for ( var i in under_mouse ) {
+      var r = under_mouse[i];
+      if ( r.obj_id == e.obj_id ) {
+        seen = 1;
+        break;
+      }
+  };
+  if (!seen) under_mouse.push(e);
+  return 1;
+}
+
+function under_mouse_pop ( e ) {
+/* --------------------------------------------------
+ * unmarks the current element from being under the mouse
+ */ 
+  console.log("Popping: " + e.obj_id + " type: " + e.isa);
+  var under_mouse_new = [];
+  for ( var i in under_mouse ) {
+      var r = under_mouse[i];
+      if ( r.obj_id == e.obj_id ) continue;
+      under_mouse_new.push(r);
+  };
+  under_mouse = under_mouse_new;
+  return 1;
+}
 
 /***********************************************************************
  * map_marker OBJECT
@@ -12,10 +61,12 @@ function map_marker (position,opts) {
  */ 
 
     this.isa      = "map_marker";
+    this.obj_id   = ++id_counter;
     this.map      = opts["map"];
     this.position = position;
     this.marker   = new GMarker(position,opts["marker_opts"]);
     this.marker.i = opts["i"];
+    this.metadata = opts["metadata"]?opts["metadata"]:{};
     this.marker_added = 0;
     var me        = this;
 
@@ -42,6 +93,21 @@ function map_marker (position,opts) {
         );
     }
 
+// So that we can get a context menu on any marker
+    if ( !opts["no_overlay_tracking"] ) {
+        this["event_"+ev_name+"_auto_handler"] = GEvent.addListener(
+            this.marker,
+            "mouseover",
+            function () { under_mouse_push(me) }
+        );
+        this["event_"+ev_name+"_auto_handler"] = GEvent.addListener(
+            this.marker,
+            "mouseout",
+            function () { under_mouse_pop(me) }
+        );
+    }
+
+
 // Add the marker to the map
     this.show = function () {
         me.hide();
@@ -50,8 +116,6 @@ function map_marker (position,opts) {
 
 // And when removing the object
     this.hide = function () {
-        console.log("Hiding marker again: ");
-        console.log("Item: " + this.marker.i );
         me.map.removeOverlay(me.marker);
     };
 
@@ -71,6 +135,7 @@ function route_directions ( opts ) {
  * This object handles a single Google Maps route
  */ 
     this.isa              = "route_directions";
+    this.obj_id           = ++id_counter;
     this.map              = opts["map"];
     this.metadata         = opts["metadata"]   ? opts["metadata"]   : {};
     this.route_travelmode = opts["travelmode"] ? opts["travelmode"] : G_TRAVEL_MODE_DRIVING;
@@ -131,6 +196,13 @@ function route_directions ( opts ) {
             var latlng = new GLatLng(vertex[0],vertex[1]);
             polyline_array.push(latlng);
         }
+
+// Set things up so that when the drag marker floats over our object
+// we set it.
+        me.drag_marker_opts["ev_mouseover"] = function () { console.log("Mouse setup!" + me.isa); under_mouse_push(me) };
+        me.drag_marker_opts["ev_mouseout"]  = function () { under_mouse_pop(me)  };
+        me.drag_marker_opts["no_overlay_tracking"] = 1;
+
         var polyline = new GPolyline( polyline_array );
         me.polyline = new polyline_handle({
             map: me.map,
@@ -169,7 +241,6 @@ function route_directions ( opts ) {
             vertex_i = polyline_vertices - 1;
           }
           var vertex     = polyline.getVertex(vertex_i);
-          var waypoint_i = i+0;
 
           var ev_dragend = function (latlon) {
                               var waypoint_name = latlon.lat() + ", " + latlon.lng();
@@ -180,7 +251,11 @@ function route_directions ( opts ) {
           var marker     = new map_marker(
                               vertex,
                               {
-                                  i: waypoint_i,
+                                  i: i,
+                                  metadata:{
+                                    type: "waypoint",
+                                    waypoint_i: i
+                                  },
                                   map:me.map,
                                   show:1,
                                   marker_opts: {draggable: 1},
@@ -189,7 +264,6 @@ function route_directions ( opts ) {
                               }
                             );
           me.marker_list.push(marker);
-          console.log("Added marker: " + i);
       }
   };
 
@@ -202,7 +276,6 @@ function route_directions ( opts ) {
     for ( var i=0; i < me.marker_list.length;i++ ) {
       var marker = me.marker_list[i];
       marker.hide();
-      console.log("Hiding marker: " + i);
     }
     me.marker_list = null;
   }
@@ -380,12 +453,9 @@ function route_directions ( opts ) {
 
 // Set things up so that when the drag marker floats over our object
 // we set it.
-            me.drag_marker_opts["ev_mouseover"] = function () {
-                under_mouse.push(me);
-            };
-            me.drag_marker_opts["ev_mouseout"] = function () {
-                under_mouse.pop();
-            };
+            me.drag_marker_opts["ev_mouseover"] = function () { console.log("Mouse setup!" + me.isa); under_mouse_push(me) };
+            me.drag_marker_opts["ev_mouseout"]  = function () { under_mouse_pop(me)  };
+            me.drag_marker_opts["no_overlay_tracking"] = 1;
 
 // Now we can go ahead and setup the standard polyline stuff
             me.polyline = new polyline_handle({
@@ -412,6 +482,7 @@ function polyline_handle ( opts ) {
  * some fun tricks
  */ 
     this.isa              = "polyline_handle";
+    this.obj_id           = ++id_counter;
     this.map              = opts["map"];
     this.map_reposition   = true;
     this.polyline         = opts["polyline"];

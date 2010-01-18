@@ -60,8 +60,24 @@ var menu_proto = [
 //
     function (pixel,latlon,latlon_str) {
       if (!session)            return;
-      if (!under_mouse.length) return;
-      menu_route = under_mouse[0];
+      var map_marker = under_mouse_isa("map_marker");
+      if (!map_marker) return;
+      if (!map_marker.metadata) return;
+      if (map_marker.metadata.type != "waypoint") return;
+      var opt={}; opt['Remove Waypoint'] = {
+          onclick: menuaction_directions_save,
+          icon: "css/images/icon-save.png"
+      }; return opt; },
+
+// --------------------------------------------------
+// This should only be shown when right-clicking on a
+// direction/route. This will allow the user to save this
+// route to their personal database for future recall
+//
+    function (pixel,latlon,latlon_str) {
+      if (!session)            return;
+      menu_route = under_mouse_isa("route_directions");
+      if (!menu_route)         return;
       var opt={}; opt['Save Directions'] = {
           onclick: menuaction_directions_save,
           icon: "css/images/icon-save.png"
@@ -174,20 +190,20 @@ $(function(){
     });
 
 // Setup the GMap interface
-  if (GBrowserIsCompatible()) {
-    map        = new GMap2(document.getElementById("map_canvas"));
+    if (GBrowserIsCompatible()) {
+      map        = new GMap2(document.getElementById("map_canvas"));
 
 // Bind the right click to something useful
-    GEvent.addListener(map,"singlerightclick",function(point,src,overlay){ 
+      GEvent.addListener(map,"singlerightclick",function(point,src,overlay){ 
 
 // Account for when we're floating over something        
-        if ( under_mouse.length > 0 ) {
-        }
+      if ( under_mouse.length > 0 ) {
+      }
 
-        var cmenu = $.contextMenu.create(contextmenu_event_show,{theme:"vista"});
-        point.pageX = point.x;
-        point.pageY = point.y;
-        cmenu.show($('#map_canvas'),point);
+      var cmenu = $.contextMenu.create(contextmenu_event_show,{theme:"vista"});
+      point.pageX = point.x;
+      point.pageY = point.y;
+      cmenu.show($('#map_canvas'),point);
     });
 
 // Create a map and let's try and center it...
