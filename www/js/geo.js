@@ -10,11 +10,9 @@ function under_mouse_isa ( type ) {
  * returns an object of type "isa" if it can find
  * an entry under the mouse
  */ 
- console.log(under_mouse);
   if ( !under_mouse.length ) return;
   for ( var i in under_mouse ) {
       var r = under_mouse[i];
-      console.log("FOUND: " + r.isa + " vs type: " +type );
       if ( r.isa == type ) return r;
   }
   return;
@@ -25,7 +23,6 @@ function under_mouse_push ( e ) {
  * marks the current element to be under the mouse
  */ 
   var seen = 0;
-  console.log("Pushing: " + e.obj_id + " type: " + e.isa);
   for ( var i in under_mouse ) {
       var r = under_mouse[i];
       if ( r.obj_id == e.obj_id ) {
@@ -41,7 +38,6 @@ function under_mouse_pop ( e ) {
 /* --------------------------------------------------
  * unmarks the current element from being under the mouse
  */ 
-  console.log("Popping: " + e.obj_id + " type: " + e.isa);
   var under_mouse_new = [];
   for ( var i in under_mouse ) {
       var r = under_mouse[i];
@@ -199,7 +195,7 @@ function route_directions ( opts ) {
 
 // Set things up so that when the drag marker floats over our object
 // we set it.
-        me.drag_marker_opts["ev_mouseover"] = function () { console.log("Mouse setup!" + me.isa); under_mouse_push(me) };
+        me.drag_marker_opts["ev_mouseover"] = function () { under_mouse_push(me) };
         me.drag_marker_opts["ev_mouseout"]  = function () { under_mouse_pop(me)  };
         me.drag_marker_opts["no_overlay_tracking"] = 1;
 
@@ -455,7 +451,7 @@ function route_directions ( opts ) {
 
 // Set things up so that when the drag marker floats over our object
 // we set it.
-            me.drag_marker_opts["ev_mouseover"] = function () { console.log("Mouse setup!" + me.isa); under_mouse_push(me) };
+            me.drag_marker_opts["ev_mouseover"] = function () { under_mouse_push(me) };
             me.drag_marker_opts["ev_mouseout"]  = function () { under_mouse_pop(me)  };
             me.drag_marker_opts["no_overlay_tracking"] = 1;
 

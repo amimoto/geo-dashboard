@@ -109,6 +109,18 @@ var menu_proto = [
       }; return opt; },
 
 // --------------------------------------------------
+// We can choose from multiple locations the source
+// of our gps data. We may want to load from the server 
+// where we store data or locally if we're finding that we're
+// going offline for a bit.
+//
+    function (pixel,latlon,latlon_str) {
+      if ( !session ) return;
+      var opt={}; opt['Configure GPS'] = {
+          onclick: menuaction_gps_configure
+      }; return opt; },
+
+// --------------------------------------------------
 // Sometimes, the connection to the GPS will fail. Here,
 // we can ask the system to renegotiate the connection
 //
@@ -417,6 +429,11 @@ function menuaction_directions_waypoint_remove ( route_directions, waypoint_i ) 
     route_directions.search();
 }
 
+function menuaction_gps_configure (menu_item,menu) {
+// --------------------------------------------------
+    dialog_load('GPS Settings','dialog-gps-configure.phtml');
+}
+
 function menuaction_directions_here (menu_item,menu) {
 // --------------------------------------------------
   alert(menu_item);
@@ -440,4 +457,4 @@ function debug_log ( msg ) {
 function debug_logcl ( msg ) {
 // --------------------------------------------------
     $('#debug').val( msg == null ? "" : msg + "\n" );
-}
+
