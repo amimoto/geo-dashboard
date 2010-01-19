@@ -1,0 +1,46 @@
+<script>
+/*****************************************************************
+ ** To gain access to stored routes and waypoints, a user must
+ ** identify themselves to the server. We'll handle that here.
+ *****************************************************************/
+
+function geod_login ( form ) {
+// --------------------------------------------------
+    $(form).ajaxSubmit({
+      dataType: "json",
+      success: function (data) {
+        if ( data.sess ) {
+            session   = data.sess;
+            user_info = data.user;
+            $('#dialog').dialog('close');
+        }
+        else {
+            $('#dialog-error-message').html(data.error);
+            $('#dialog-error').slideDown();
+        }
+      }
+    });
+    return false;
+}
+
+</script>
+
+<form id="dialog-form" class="form-dialog" action="actions/login.json" method="post" onsubmit="return geod_login(this)" style="">
+
+  <div class="ui-widget" id="dialog-error" style="display:none" >
+    <div class="ui-state-error ui-corner-all"> 
+      <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span> 
+      <strong>Alert:</strong> <span id="dialog-error-message">ERROR!</a></p> 
+    </div> 
+  </div> 
+
+  <div class="form-row">
+    <label>Username</label>
+    <input type="text" name="usr_login" />
+  </div>
+  <div class="form-row">
+    <label>Password</label>
+    <input type="password" name="usr_pass" />
+  </div>
+</form>
+

@@ -38,6 +38,13 @@ var menu_proto = [
     $.contextMenu.separator, 
 
     { 
+      'Overlays': {
+        onclick: menuaction_overlays,
+      }
+    },
+
+
+    { 
       'Search': {
         onclick: menuaction_search,
         icon: "css/images/icon-search.png"
@@ -392,6 +399,12 @@ function dialog_load ( title, page ) {
 /***************************************************
  * MENU FUNCTIONS
  ***************************************************/
+
+function menuaction_overlays() {
+// --------------------------------------------------
+    dialog_load('Overlays','dialog-overlays.phtml');
+}
+
 
 function menuaction_login () {
 // --------------------------------------------------
