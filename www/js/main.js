@@ -59,13 +59,17 @@ var menu_proto = [
 // route to their personal database for future recall
 //
     function (pixel,latlon,latlon_str) {
-      if (!session)            return;
+      if (!session)             return;
+      var menu_direction = under_mouse_isa("route_directions");
+      if (!menu_direction)         return;
       var map_marker = under_mouse_isa("map_marker");
-      if (!map_marker) return;
+      if (!map_marker)          return;
       if (!map_marker.metadata) return;
       if (map_marker.metadata.type != "waypoint") return;
       var opt={}; opt['Remove Waypoint'] = {
-          onclick: menuaction_directions_save,
+          onclick: function () { 
+                        menuaction_directions_waypoint_remove(menu_direction,map_marker.metadata.waypoint_i) 
+                    },
           icon: "css/images/icon-save.png"
       }; return opt; },
 
@@ -405,6 +409,12 @@ function menuaction_directions_save (menu_item,menu) {
 function menuaction_directions_load (menu_item,menu) {
 // --------------------------------------------------
     dialog_load('Direction Load','dialog-directions-load.phtml');
+}
+
+function menuaction_directions_waypoint_remove ( route_directions, waypoint_i ) {
+// --------------------------------------------------
+    route_directions.waypoint_remove(waypoint_i);
+    route_directions.search();
 }
 
 function menuaction_directions_here (menu_item,menu) {

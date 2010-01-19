@@ -260,7 +260,9 @@ function route_directions ( opts ) {
                                   show:1,
                                   marker_opts: {draggable: 1},
                                   ev_dragstart: function () {},
-                                  ev_dragend: ev_dragend
+                                  ev_dragend: ev_dragend,
+                                  ev_mouseover: function () { under_mouse_push(me) },
+                                  ev_mouseout: function () { under_mouse_pop(me)  }
                               }
                             );
           me.marker_list.push(marker);
