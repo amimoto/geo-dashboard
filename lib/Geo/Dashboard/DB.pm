@@ -103,6 +103,15 @@ sub user_db_init {
             )
         `,
 
+        qq`
+            create table if not exists geodu_settings (
+                set_id integer primary key autoincrement,
+                set_name varchar(255),
+                set_data text
+            )
+        `,
+
+
     ) {
         my $usth = $udb->prepare($sql) or die "$sql\n$DBI::errstr\n";
         $usth->execute or die $DBI::errstr;

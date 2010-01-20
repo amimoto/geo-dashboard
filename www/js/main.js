@@ -470,4 +470,5 @@ function debug_log ( msg ) {
 function debug_logcl ( msg ) {
 // --------------------------------------------------
     $('#debug').val( msg == null ? "" : msg + "\n" );
+}
 

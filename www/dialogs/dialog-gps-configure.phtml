@@ -3,6 +3,12 @@
  ** To gain access to stored routes and waypoints, a user must
  ** identify themselves to the server. We'll handle that here.
  *****************************************************************/
+<?
+  require Geo::Dashboard::User::Settings;
+  my $set_rec = Geo::Dashboard::User::Settings->setting_get({
+                        set_name => 'gps/path',
+                    });
+?>
 
 function geod_login ( form ) {
 // --------------------------------------------------
@@ -36,7 +42,7 @@ function geod_login ( form ) {
 
   <div class="form-row">
     <label>GPS Source</label>
-    <input type="text" name="usr_login" /> 
+    <input type="text" name="usr_login" value="<?=$set_rec?$set_rec->{set_data}:'/actions/gps_location.json'?>"/> 
     <div style="font-size:10px">Usually a URL like /actions/gps_location.json</div>
   </div>
 </form>
