@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+use strict;
+use Geo::Dashboard;
+use Geo::Dashboard::User::GPS;
+
+# This module should be used to track users' GPS entries.
+# They will need to use an API and preauthenticate before accessing this.
+
+# Requires 
+#   @param: a - action
+#   @param: s - session id
+
+my $args = $in->Vars;
+my $action = $args->{a};
+
+if ( $action eq 'list' ) {
+    my $gps_list = Geo::Dashboard::User::GPS->gps_list($args) or return print_json_error("No gps found");
+    print_json_success( $gps_list );
+}
+
+elsif ( $action eq 'add' ) {
+    my $gps_add = Geo::Dashboard::User::GPS->gps_add($args) or return print_json_error("No gps added");
+    print_json_success({});
+}
+
+elsif ( $action eq 'get' ) {
+    my $gps_rec = Geo::Dashboard::User::GPS->gps_get($args) or return print_json_error("No gps found");
+    print_json_success( $gps_rec );
+}
+
+elsif ( $action eq 'set' ) {
+    my $gps_rec = Geo::Dashboard::User::GPS->gps_set($args) or return print_json_error("No gps found");
+    print_json_success( $gps_rec );
+}
+
+else {
+    print_json_error("Unknown action requested");
+}
+

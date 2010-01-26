@@ -12,6 +12,8 @@ var gps_follow       = 1;
 var route_stack       = [];
 var route_menu_lookup = {};
 
+var settings = {};
+
 var session;
 var user_info;
 var menu_route;
@@ -155,6 +157,17 @@ var menu_proto = [
         icon: "css/images/icon-place-waypoint.png"
       }
     },
+
+// --------------------------------------------------
+// Request an API key for the user (which will allow for
+// things such as gps updates)
+//
+    function (pixel,latlon,latlon_str) {
+      if (!session) return;
+      var opt={}; opt['API Key'] = {
+          onclick: menuaction_api_key,
+      }; return opt; },
+
 
 // --------------------------------------------------
 // HANDLE LOGIN/LOGOUT
@@ -334,11 +347,13 @@ function gps_status_poll () {
     var data = {};
     var now  = new Date();
 
+console.log("checking again");
 // Should only be used while the streetview is updating to a new location
     if ( gps_poll_pause ) {
         return;
     };
 
+console.log("LAST was: " + tics_last );
 // We don't want to double up requests so we will wait 1 second before
 // issuing a new request if it hung
     if ( tics_last && ( now.getTime() - 1000 < tics_last.getTime() ) ) {
@@ -348,18 +363,23 @@ function gps_status_poll () {
 // Record that we're starting a new request.
     tics_last = now;
 
-    jQuery.getJSON( 
-        '/gps_state.json', 
-        data, 
-        function ( data ) {
+    jQuery.ajax({
+        type: "GET",
+        url: settings["gps_location"], 
+        dataType: "json",
+        data: data, 
+        success: function ( data ) {
         // --------------------------------------------------
         // Receive the current status of the HMD and distance
         // travelled on the bike.
         //
+
+console.log("location update");
             if ( isNaN(data.lat) || isNaN(data.lon) ) {
                 return;
             }
 
+console.log("here");
             var new_position = new GLatLng( data.lat, data.lon );
 
             if ( !gps_marker ) {
@@ -374,8 +394,13 @@ function gps_status_poll () {
               map.setCenter(new_position);
             }
             return;
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log( XMLHttpRequest );
+            console.log( textStatus ); 
+            console.log( errorThrown );
         }
-    );
+    });
 }
 
 /***************************************************
@@ -456,6 +481,57 @@ function menuaction_place_waypoint(menu_item,menu) {
 // --------------------------------------------------
   alert(menu_item);
 }
+
+
+function menuaction_api_key (menu_item,menu) {
+// --------------------------------------------------
+    dialog_load('API Key','dialog-api-key.phtml');
+}
+
+/***************************************************
+ * SETTINGS
+ ***************************************************/
+
+function settings_load () {
+// --------------------------------------------------
+// Load all the settings associated with a user
+//
+    jQuery.getJSON(
+        '/actions/settings.json',
+        { a: "list" },
+        function (resp) {
+        // --------------------------------------------------
+            if ( resp.error ) return;
+            var settings_loop = resp.data;
+            for ( var i in settings_loop ) {
+                settings[i] = settings_loop[i];
+            }
+        }
+    );
+}
+
+function setting_save ( set_name, set_data ) {
+// --------------------------------------------------
+// Save a single setting value
+//
+    jQuery.getJSON(
+        '/actions/settings.json',
+        { 
+            a: "set" ,
+            set_name: set_name,
+            set_data: set_data
+        },
+        function (resp) {
+        // --------------------------------------------------
+            if ( resp.error ) return;
+            settings[set_name] = set_data;
+        }
+    );
+}
+
+/***************************************************
+ * DEBUGGING
+ ***************************************************/
 
 function debug_log ( msg ) {
 // --------------------------------------------------

@@ -3,6 +3,7 @@
 use strict;
 use Data::Dumper;
 use Geo::Dashboard::User;
+use Geo::Dashboard::API;
 use Geo::Dashboard;
 
 # ->Requires 
@@ -21,7 +22,17 @@ use Geo::Dashboard;
 #
 
 my $args = $in->Vars;
-if ( my $login = Geo::Dashboard::User->user_login($args) ) {
+if ( $args->{api_key} and  my $login = Geo::Dashboard::API->api_login($args)) {
+  print_json( 
+    $login,
+    { cookies => [{
+            -name  => "s",
+            -value => $login->{sess}{ses_key}
+        }] },
+  );
+
+}
+elsif ( my $login = Geo::Dashboard::User->user_login($args) ) {
   print_json( 
     $login,
     { cookies => [{

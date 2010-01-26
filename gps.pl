@@ -6,22 +6,21 @@ use lib '../gps-mtk/lib';
 use threads;
 use threads::shared;
 use JSON;
-use HTTP::Daemon;
-use HTTP::Status;
 use GPS::MTK::Constants qw/:commands/;
 use GPS::MTK;
 use Time::HiRes qw/ time /;
-use constant{
-        PI => 3.14156
-    };
+use HTTP::Cookies;
+use WWW::Mechanize;
 use vars qw/ $CFG $SHARED /;
 $|++;
 
 $CFG = {
-    paths     => {},
+    paths     => {
+        comm => '/dev/ttyACM0',
+    },
     webserver => {},
     database  => { db_fpath => 'dashboard.sqlite' },
-    api_url   => 'http://test.bako.ca/api/569402bca20967cb54436731a64c42d9/',
+    api_url   => 'http://test.bako.ca/api/569402bca20967cb54436731a64c42d9',
 };
 
 main();
@@ -30,10 +29,10 @@ sub main {
 # --------------------------------------------------
 # Just here to give a quick block view of the overalll
 # structure of the code. A sequence of inits and
-# the main webserver sits on the update loop
+# the main dispatch thread sits on the update loop
 #
     init();
-    webserver();
+    dispatch();
 }
 
 sub init {
@@ -56,7 +55,7 @@ sub gps {
 
 # Figure out which serial port we're trying to use...
     my $comm_port_fpath;
-    for ( '/dev/rfcomm3' ) {
+    for ( $CFG->{paths}{comm} ) {
         next unless -e $_;
         $comm_port_fpath = $_;
     }
@@ -67,67 +66,72 @@ sub gps {
                         comm_port_fpath => $comm_port_fpath,
                         probe_skip      => 1,
                     );
-    print "Connected!\n";
+
+# Hook into only the GPGGA
+    my $handler = $device->handler_obj;
+    $handler->event_hook(
+        GPGGA => sub {
+        # --------------------------------------------------
+            my ( $mydata,$verb,$args,$self,$hook_key) = @_;
+            my $state    = $self->state;
+            my %key_trans = (
+                "unixtime" => "gps_time",
+                "lat"     => "gps_lat",
+                "lon"     => "gps_lon",
+                "alt"     => "gps_alt",
+                "speed"   => "gps_speed",
+                "hdop"    => "gps_hdop",
+                "vdop"    => "gps_vdop",
+                "heading" => "gps_heading",
+                "fix"     => "gps_fix",
+            );
+            while ( my ( $from, $to ) = each %key_trans ) {
+                $SHARED->{$to} = $state->{$from};
+            }
+            $SHARED->{gps_data} = JSON::to_json($state);
+        }
+    );
+
+# Now, all we need to do is loop on the gps device's
+# IO handler. Sending the data to the main server will be 
+# handled by the event function
+    print "Connected! <$device>\n";
 
     while (1) {
         $device->blocking(1);
-        if ( $device->loop ) {
-            my $state = $device->gps_state;
-            $SHARED->{device_state} = JSON::to_json($state);
-        }
+        $device->loop;
     }
 
 }
 
-sub webserver {
+sub dispatch {
 # --------------------------------------------------
-#    my $d = HTTP::Daemon->new(LocalAddr => '192.168.1.100') || die;
-    my $d = HTTP::Daemon->new(LocalAddr => 'localhost') || die;
-    my $gps_thread;
-    print "Please contact me at: ", $d->url, "gps_state.json\n";
-    while (my $c = $d->accept) {
-        RUN_REQUESTS: while (my $r = $c->get_request) {
-            HANDLE: {
+# We try and update the server as frequently as we can.
+# sometimes we may end up in some sort of latancy
+# trap so we won't be able to push data right away.
+# That's okay... we can wait... I think...
+#
 
-# Okay, we have an incoming request. What do we want to do with the
-# request?
-                my $fpath = $r->url->path || '/'.$CFG->{webserver}{index};
+# Start the GPS connection
+    my $gps_thread = threads->create('gps');
 
-                print "Request: $fpath\n";
+# Get a session key
+    my $api_conn   = WWW::Mechanize->new;
+    my $cookie_jar = HTTP::Cookies->new;
+    $api_conn->cookie_jar($cookie_jar);
+    $api_conn->get($CFG->{api_url}."/actions/login.json");
 
-# Particular paths bring about particular functions... this one 
-# will report back the current orientation of the HMD so that the user
-# can "look around" the space.
-                if ( $fpath eq '/gps_state.json' ) {
-
-print "Sending state\n";
-                    my $r = HTTP::Response->new(200);
-                    $r->header('Content-type','application/json');
-                    $r->content($SHARED->{device_state}||'{}');
-print $SHARED->{device_state} . "\n";
-                    $c->send_response($r);
-                    $c->close;
-
-# Create the thread that keeps track of how fast the 
-# bike tire is spinning
-                    $gps_thread ||= threads->create('gps');
-
-                    next RUN_REQUESTS;
-                }
-
-                elsif ( $fpath eq '/gps_restart.json' ) {
-                    $c->send_response(json_response({}));
-                    $c->close;
-                    $gps_thread and $gps_thread->kill('SIGKILL')->detach;
-                    $gps_thread = threads->create('gps');
-                    next RUN_REQUESTS;
-                }
-            };
-
-            $c->send_error(RC_FORBIDDEN)
-        }
-        $c->close;
-        undef($c);
+# Okay, the api_conn now has a cookie. We can continue on
+    while (1) {
+        use Data::Dumper; warn Dumper $SHARED;
+        $api_conn->post(
+            $CFG->{api_url}."/actions/gps.json",
+            {
+                %$SHARED,
+                a => "add",
+            },
+        );
+        sleep(1);
     }
 }
 

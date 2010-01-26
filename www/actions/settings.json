@@ -12,25 +12,26 @@ my $args = $in->Vars;
 my $action = $args->{a};
 
 if ( $action eq 'list' ) {
-    my $trk_list = Geo::Dashboard::User::Settings->setting_list($args);
-    print_json( $trk_list || {error=>"No tracks found"} );
+    my $set_list = Geo::Dashboard::User::Settings->setting_list($args) or return print_json_error("No settings found");
+    print_json_success( $set_list );
 }
 
 elsif ( $action eq 'add' ) {
-    my $trk_add = Geo::Dashboard::User::Settings->setting_add($args);
-    print_json( $trk_add || {error=>"No tracks added"} );
+    my $set_add = Geo::Dashboard::User::Settings->setting_add($args) or return print_json_error("No settings added");
+    print_json_success( $set_add );
 }
 
 elsif ( $action eq 'get' ) {
-    my $trk_rec = Geo::Dashboard::User::Settings->setting_get($args);
-    print_json( $trk_rec|| {error=>"No tracks found"} );
+    my $set_rec = Geo::Dashboard::User::Settings->setting_get($args) or return print_json_error("No settings found");
+    print_json_success( $set_rec );
 }
 
 elsif ( $action eq 'set' ) {
-    my $trk_rec = Geo::Dashboard::User::Settings->setting_set($args);
-    print_json( $trk_rec|| {error=>"No tracks found"} );
+    my $set_rec = Geo::Dashboard::User::Settings->setting_set($args) or return print_json_error("No settings found");
+    print_json_success( $set_rec );
 }
 
 else {
-    print_json({error=>"Unknown action requested"});
+    print_json_error("Unknown action requested");
 }
+

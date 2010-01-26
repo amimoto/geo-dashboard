@@ -1,0 +1,51 @@
+<script>
+/*****************************************************************
+ ** To gain access to stored routes and waypoints, a user must
+ ** identify themselves to the server. We'll handle that here.
+ *****************************************************************/
+
+function geod_api ( form ) {
+// --------------------------------------------------
+    $('#dialog').dialog('close');
+    return false;
+}
+
+</script>
+
+<form id="dialog-form" class="form-dialog" action="actions/login.json" method="post" onsubmit="return geod_api(this)" style="">
+
+  <div class="ui-widget" id="dialog-error" style="display:none" >
+    <div class="ui-state-error ui-corner-all"> 
+      <p><span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span> 
+      <strong>Alert:</strong> <span id="dialog-error-message">ERROR!</a></p> 
+    </div> 
+  </div> 
+
+    <?
+        my $api_key = "";
+        my $api_url = "";
+        require Geo::Dashboard;
+        ASSIGN_API: {
+
+            my $sess = $Geo::Dashboard::SESS  or last;
+            my $sess_data = $sess->{ses_data} or last;
+            my $user = $sess_data->{user}     or last;
+
+            require Data::Dumper;
+            require Geo::Dashboard::API;
+            $api_key = Geo::Dashboard::API->api_create({usr_login_fk=>$user->{usr_login}});
+            my $cfg = $Geo::Dashboard::CFG;
+
+            require Geo::Dashboard::Parser;
+            $api_url = Geo::Dashboard::Parser->string_parse(
+                            $cfg->{urls}{api},
+                            { api_key => $api_key }
+                        );
+        }
+    ?>
+    <strong>Your API Access URL:</strong> <br/>
+    <?=$api_url?>
+  </div>
+
+</form>
+

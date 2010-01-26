@@ -52,6 +52,17 @@ sub db_init {
         `,
 
         qq`
+            create table if not exists geod_api (
+                api_key varchar(100) not null primary key,
+                usr_id_fk integer not null,
+                usr_login_fk varchar(100) not null,
+                api_created_tics integer not null,
+                api_expires integer not null,
+                api_data text
+            )
+        `,
+
+        qq`
             create table if not exists geod_sessions (
                 ses_key varchar(100) not null primary key,
                 ses_created_tics integer not null,
@@ -112,6 +123,23 @@ sub user_db_init {
         `,
 
 
+        qq`
+            create table if not exists geodu_gps (
+                gps_id integer primary key autoincrement,
+                gps_time float,
+                gps_lat float,
+                gps_lon float,
+                gps_alt float,
+                gps_speed float,
+                gps_hdop float,
+                gps_vdop float,
+                gps_heading float,
+                gps_fix int,
+                gps_data text
+            )
+        `,
+
+
     ) {
         my $usth = $udb->prepare($sql) or die "$sql\n$DBI::errstr\n";
         $usth->execute or die $DBI::errstr;
@@ -119,7 +147,5 @@ sub user_db_init {
 
     return $udb;
 }
-
-
 
 1;

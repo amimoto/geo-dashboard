@@ -262,18 +262,34 @@ sub user_logout {
 __END__
 
 {
-  'mag_var_dir' => '',
-  'date' => '171209',
-  'status' => 'A',
+  'utc' => '175712.000',
   'lat' => '49.273215',
-  'heading' => '151.28',
-  'age' => '-16.8',
+  'lon' => '-123.099872',
+
   'hdop' => '1.7',
-  'sat_vhdop' => '',
+
+  'heading' => '151.28',
+
+  'mag_var_dir' => '',
   'speed' => '1.00',
+  'date' => '171209',
+  'alt' => '9.6',
+  'fix' => '1',
+  'units' => 'M'
+
+  'sat_fix' => '2',
+  'status' => 'A',
+  'age' => '-16.8',
+  'sat_vhdop' => '',
   'sat_hdop' => '04',
   'station' => 'M',
-  'alt' => '9.6',
+  'sat_mode' => 'A',
+  'unixtime' => 1261072631,
+  'sat_dop' => '09',
+  'sat_prn_number' => '30',
+  'mag_var' => '',
+  'sats' => '03',
+
   'satellites' => [
                     {
                       'sat_snr' => '16',
@@ -342,16 +358,5 @@ __END__
                       'sat_azimuth' => '080'
                     }
                   ],
-  'fix' => '1',
-  'utc' => '175712.000',
-  'sat_mode' => 'A',
-  'unixtime' => 1261072631,
-  'sat_fix' => '2',
-  'sat_dop' => '09',
-  'sat_prn_number' => '30',
-  'mag_var' => '',
-  'lon' => '-123.099872',
-  'sats' => '03',
-  'units' => 'M'
 };
 

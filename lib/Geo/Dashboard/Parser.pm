@@ -20,8 +20,7 @@ has cache => ( is => "rw", isa => "Str", default => "0" );
 has compile_header => ( is => "rw", isa => "Str", default => q`#line 1:eval
                             sub {
                                 local $TEMPLATE_OUTPUT = '';
-                                sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
-                                sub include {$TEMPLATE_OUTPUT.=$SELF->parse(shift,$ARGS,$OPTS)};` );
+                            ` );
 
 has compile_footer => ( is => "rw", isa => "Str", default => q`
                                 return $TEMPLATE_OUTPUT;
@@ -36,7 +35,7 @@ sub parse {
     my ( $self, $cache_name, $args, $opts ) = @_;
 
 # self must be an object ref, not a package name
-    ref $self or $self = $self->new;
+    ref $self or $self = $self->new($opts);
 
 # Compile the file if required
     my $compiled_fn = $self->make( $cache_name, $args, $opts ) or return;
@@ -52,6 +51,22 @@ sub parse {
 
     return $buf;
 }
+
+sub string_parse {
+# --------------------------------------------------
+# Takes a single string and parses that... rather than
+# a file. This is mostly a convenience function
+#
+    my ( $self, $string, $args, $opts ) = @_;
+    $opts||={};
+    $opts->{string} = $string;
+    defined $opts->{cache} or $opts->{cache} = 0;
+    return $self->parse('', $args, $opts);
+}
+
+# Helper functions
+sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
+sub include {$TEMPLATE_OUTPUT.=$SELF->parse(shift,$ARGS,$OPTS)};
 
 sub make {
 # --------------------------------------------------

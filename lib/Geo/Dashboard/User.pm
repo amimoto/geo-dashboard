@@ -23,6 +23,24 @@ sub user_init {
     return $session;
 }
 
+sub api_init {
+# --------------------------------------------------
+# Initialize the user via the api key
+#
+    my ( $pkg, $api_key ) = @_;
+
+# Figure out who this user is from their session
+    my $session = $SESS = $pkg->session_get({sess_key=>$api_key}) or return;
+    return $session unless my $user = $session->{ses_data}{user};
+
+# Load up the user's database (create, if it doesn't exist)
+    require Geo::Dashboard::DB;
+    $UDB = Geo::Dashboard::DB->user_db_init($user->{usr_login});
+
+# Done!
+    return $session;
+}
+
 sub user_get {
 # --------------------------------------------------
 # Fetches a user record from the database

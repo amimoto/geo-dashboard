@@ -10,28 +10,17 @@
                     });
 ?>
 
-function geod_login ( form ) {
+function geodu_settings( form ) {
 // --------------------------------------------------
-    $(form).ajaxSubmit({
-      dataType: "json",
-      success: function (data) {
-        if ( data.sess ) {
-            session   = data.sess;
-            user_info = data.user;
-            $('#dialog').dialog('close');
-        }
-        else {
-            $('#dialog-error-message').html(data.error);
-            $('#dialog-error').slideDown();
-        }
-      }
-    });
+    var gps_location = $(form["gps_location"]).val();
+    setting_save("gps_location",gps_location);
+    $('#dialog').dialog('close');
     return false;
 }
 
 </script>
 
-<form id="dialog-form" class="form-dialog" action="actions/login.json" method="post" onsubmit="return geod_login(this)" style="">
+<form id="dialog-form" class="form-dialog" action="#" method="post" onsubmit="return geodu_settings(this)" style="">
 
   <div class="ui-widget" id="dialog-error" style="display:none" >
     <div class="ui-state-error ui-corner-all"> 
@@ -42,7 +31,7 @@ function geod_login ( form ) {
 
   <div class="form-row">
     <label>GPS Source</label>
-    <input type="text" name="usr_login" value="<?=$set_rec?$set_rec->{set_data}:'/actions/gps_location.json'?>"/> 
+    <input type="text" name="gps_location" value="<?=$set_rec?$set_rec->{set_data}:'/actions/gps_location.json'?>"/> 
     <div style="font-size:10px">Usually a URL like /actions/gps_location.json</div>
   </div>
 </form>

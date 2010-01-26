@@ -16,7 +16,7 @@ sub main {
 # --------------------------------------------------
     my ( $opts ) = @_;
 
-    Geo::Dashboard->init;
+    Geo::Dashboard->init( '/home/aki/projects/geo-dashboard');
 
 # Add a new user record to the database
     if ( $opts->{a} ) {

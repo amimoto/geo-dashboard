@@ -34,6 +34,15 @@ sub print_json {
     print $json_data;
 }
 
+sub print_json_success {
+# --------------------------------------------------
+# Just wrap the json response with a header to describe
+# success!!
+#
+    my ( $args, $opts ) = @_;
+    return print_json({success=>1,data=>$args},$opts);
+}
+
 sub print_json_error {
 # --------------------------------------------------
 # Just dumps an error message to stdout. Whoops! :)
@@ -52,6 +61,13 @@ sub dispatch {
     my $in = CGI->new;
     my $uri = $r->uri;
     $R = $r;
+
+# Copy over the API. This just handles the situation where
+# the reequest method was POST but the api_key was passed as
+# parto f a QUERY_STRING
+    if ( $ENV{QUERY_STRING} =~ /\bapi_key=(\w+)/ ) {
+        $in->param(api_key=>$1);
+    }
 
 # If the user has provided us with a session key, let's authenticate them
     if ( my $sess_key = $in->param('s') || $in->cookie('s') ) {
@@ -86,8 +102,6 @@ sub dispatch {
                             compile_header => q`#line 1:eval
                             sub {
                                 local $TEMPLATE_OUTPUT = '';
-                                sub out {$TEMPLATE_OUTPUT.=join "",map{ref$_?$$_:$_}@_};
-                                sub include {$TEMPLATE_OUTPUT.=$SELF->parse(shift,$ARGS,$OPTS)};
                                 my $R = $OPTS->{R};
                                 my $in = $OPTS->{in};`,
                         });
