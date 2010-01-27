@@ -363,9 +363,10 @@ console.log("LAST was: " + tics_last );
 // Record that we're starting a new request.
     tics_last = now;
 
+    data["a"] = "last";
     jQuery.ajax({
         type: "GET",
-        url: settings["gps_location"], 
+        url: "/actions/gps.json", 
         dataType: "json",
         data: data, 
         success: function ( data ) {
@@ -373,14 +374,19 @@ console.log("LAST was: " + tics_last );
         // Receive the current status of the HMD and distance
         // travelled on the bike.
         //
+            if ( data.error ) return;
 
-console.log("location update");
-            if ( isNaN(data.lat) || isNaN(data.lon) ) {
+        // Remove envelope
+            data = data["data"];
+
+console.log(data);
+console.log("location update: " + data["gps_lat"] + " and " + data["gps_lon"] );
+            if ( isNaN(data.gps_lat) || isNaN(data.gps_lon) ) {
                 return;
             }
 
 console.log("here");
-            var new_position = new GLatLng( data.lat, data.lon );
+            var new_position = new GLatLng( data.gps_lat, data.gps_lon );
 
             if ( !gps_marker ) {
                 gps_marker = new GMarker(new_position);

@@ -16,7 +16,7 @@ $|++;
 
 $CFG = {
     paths     => {
-        comm => '/dev/ttyACM0',
+        comm => [ '/dev/ttyACM0', '/dev/rfcomm3' ],
     },
     webserver => {},
     database  => { db_fpath => 'dashboard.sqlite' },
@@ -55,7 +55,7 @@ sub gps {
 
 # Figure out which serial port we're trying to use...
     my $comm_port_fpath;
-    for ( $CFG->{paths}{comm} ) {
+    for ( @{$CFG->{paths}{comm}} ) {
         next unless -e $_;
         $comm_port_fpath = $_;
     }

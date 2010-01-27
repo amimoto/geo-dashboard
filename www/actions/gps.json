@@ -19,6 +19,13 @@ if ( $action eq 'list' ) {
     print_json_success( $gps_list );
 }
 
+elsif ( $action eq 'last' ) {
+    $args->{limit} = 1;
+    my $gps_list = Geo::Dashboard::User::GPS->gps_list($args) or return print_json_error("No gps found");
+    print_json_success($gps_list->[0]);
+}
+
+
 elsif ( $action eq 'add' ) {
     my $gps_add = Geo::Dashboard::User::GPS->gps_add($args) or return print_json_error("No gps added");
     print_json_success({});
